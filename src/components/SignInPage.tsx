@@ -29,7 +29,7 @@ const SignInPage = () => {
                 provider: "google",
                 callbackURL: "/dashboard",
                 errorCallbackURL: "/",
-                newUserCallbackURL: "/dashboard"
+                newUserCallbackURL: "/form"
             });
         }
 
