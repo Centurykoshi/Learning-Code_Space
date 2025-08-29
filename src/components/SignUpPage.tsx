@@ -43,6 +43,7 @@ const SignUpPage = () => {
                 name,
                 email,
                 password,
+                newUserCallbackURL: "/form",
                 callbackURL: "/dashboard",
             });
 
