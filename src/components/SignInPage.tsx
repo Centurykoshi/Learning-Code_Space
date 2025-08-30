@@ -10,6 +10,7 @@ import { Mail, Lock, Eye, EyeOff, Ghost } from "lucide-react";
 import { use, useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FaGoogle } from "react-icons/fa";
 
 
@@ -19,24 +20,23 @@ const SignInPage = () => {
     const [password, setPassword] = useState<string>("");
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
 
     const handleGoogleSignin = async () => {
         setIsLoading(true);
 
-
         try {
             await authClient.signIn.social({
                 provider: "google",
-                callbackURL: "/dashboard",
-                errorCallbackURL: "/",
-                newUserCallbackURL: "/form"
+                callbackURL: "/dashboard",  // This is needed for OAuth redirects
             });
-        }
 
-        catch (error: any) {
-            toast.error(error?.message || "Failed to create account. Please try again.");
+            // Note: For OAuth, the redirect happens on the server side
+            // so the code below might not execute
+            toast.success("Redirecting...");
         }
-        finally {
+        catch (error: any) {
+            toast.error(error?.message || "Failed to sign in with Google. Please try again.");
             setIsLoading(false);
         }
     };
@@ -48,7 +48,7 @@ const SignInPage = () => {
             const result = await authClient.signIn.email({
                 email,
                 password,
-                callbackURL: "/",
+                // Remove callback URLs - we'll handle redirect manually
             });
 
             if (result.error) {
@@ -56,6 +56,10 @@ const SignInPage = () => {
             }
             else {
                 toast.success("Successfully signed in!");
+                // Wait a moment for the toast, then redirect to dashboard
+                setTimeout(() => {
+                    router.push("/dashboard");
+                }, 1500);
             }
         } catch (error) {
             toast.error("Failed to sign in with email" + error);

@@ -36,15 +36,15 @@ const SignUpPage = () => {
         if (password.length < 6) {
             toast.error("Password must be at least 6 characters long");
             setIsLoading(false);
-        };
+            return;
+        }
 
         try {
             const result = await authClient.signUp.email({
                 name,
                 email,
                 password,
-                newUserCallbackURL: "/form",
-                callbackURL: "/dashboard",
+                // Remove callback URLs - we'll handle redirect manually
             });
 
             if (result.error) {
@@ -52,7 +52,11 @@ const SignUpPage = () => {
             }
             else {
                 toast.success("Account created successfully!");
-                await router.push("/dashboard");
+                // Wait a moment for the toast, then redirect to dashboard
+                // Dashboard will check if profile needs to be completed
+                setTimeout(() => {
+                    router.push("/dashboard");
+                }, 1500);
             }
         } catch (error) {
             toast.error("Failed to create account. Please try again.");

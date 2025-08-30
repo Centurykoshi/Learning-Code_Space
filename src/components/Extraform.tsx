@@ -53,7 +53,7 @@ export default function Extraform() {
                 gender: data.gender
             });
             toast.success("Profile updated successfully!");
-            router.push("/");
+            router.push("/dashboard");
         } catch (error) {
             console.error("Profile update error:", error);
             toast.error("Failed to update profile. Please try again.");
