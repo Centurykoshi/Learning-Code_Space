@@ -1,36 +1,21 @@
+"use client";
+import { useEffect } from "react";
+import { startLightRayAnimation } from "@/lib/lightRay"; // your JS animation file
 
-import QuizPage from "@/components/QuizCreation";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+export default function HomePage() {
+  useEffect(() => {
+    // call your JS function after mount
+    startLightRayAnimation("lightCanvas");
+  }, []);
 
-export const metadata = { 
-    title : "Quiz | Centuriz",
-    description: "Centuriz yourself on anything!",
-}; 
-
-
-interface Props{ 
-    searchParams: { 
-        topic?: string;
-    }
+  return (
+    <main className="flex items-center justify-center h-screen bg-black">
+      <canvas
+        id="lightCanvas"
+        width={1200}
+        height={800}
+        className="rounded-xl shadow-lg"
+      />
+    </main>
+  );
 }
-
-const Quiz = async ({ searchParams }: Props) => { 
-    const session = await auth.api.getSession({
-        headers: await headers(),
-    }); 
-    const { topic } = await searchParams;
-
-    if(!session?.user) {
-        redirect("/");
-    }
-
-    return (
-        <h1 className="">
-          <QuizPage topic={topic ?? ""} />
-        </h1>
-    );
-}; 
-
-export default Quiz;

@@ -5,7 +5,7 @@ import { TRPCError } from "@trpc/server";
 import { age_gender_schema } from "@/schemas/forms/formvalidator";
 
 export const formvalidator = createTRPCRouter({
-    // Query to check if user profile is completed
+    // Query to check profile completion status
     get_profile_status: baseProcedure
         .query(async ({ ctx }) => {
             const { userId } = ctx;
@@ -34,8 +34,18 @@ export const formvalidator = createTRPCRouter({
                     });
                 }
 
-                return user;
+                return {
+                    profileCompleted: user.profileCompleted,
+                    hasAge: user.age !== null,
+                    hasGender: user.gender !== null,
+                    needsCompletion: !user.profileCompleted,
+                    gender: user.gender, // Just add this line
+                    age : user.age
+                };
             } catch (error) {
+                if (error instanceof TRPCError) {
+                    throw error;
+                }
                 throw new TRPCError({
                     code: 'INTERNAL_SERVER_ERROR',
                     message: 'Failed to fetch profile status',
@@ -49,6 +59,7 @@ export const formvalidator = createTRPCRouter({
             const { age, gender } = input;
             const { userId } = ctx;
 
+            // 1. Authentication check (should be first)
             if (!userId) {
                 throw new TRPCError({
                     code: 'UNAUTHORIZED',
@@ -57,26 +68,21 @@ export const formvalidator = createTRPCRouter({
             }
 
             try {
-                // First check if profile is already completed
+                // 2. Check if profile is already completed
                 const existingUser = await prisma.user.findUnique({
                     where: { id: userId },
                     select: { profileCompleted: true },
                 });
 
-                if (!existingUser) {
-                    throw new TRPCError({
-                        code: 'NOT_FOUND',
-                        message: 'User not found',
-                    });
-                }
-
-                if (existingUser.profileCompleted) {
+                // 3. Prevent double completion
+                if (existingUser?.profileCompleted) {
                     throw new TRPCError({
                         code: 'BAD_REQUEST',
                         message: 'Profile has already been completed',
                     });
                 }
 
+                // 4. Main operation - update user
                 const updatedUser = await prisma.user.update({
                     where: { id: userId },
                     data: {
@@ -91,8 +97,12 @@ export const formvalidator = createTRPCRouter({
                         profileCompleted: true,
                     },
                 });
+
+                // 5. Return success result
                 return updatedUser;
+
             } catch (error) {
+                // 6. Error handling
                 if (error instanceof TRPCError) {
                     throw error;
                 }
@@ -103,4 +113,3 @@ export const formvalidator = createTRPCRouter({
             }
         })
 });
-
