@@ -45,7 +45,7 @@ export default async function Sidebar() {
 
     return (
 
-        <div className="fixed flex flex-col left-0 w-20 h-screen rounded-tl-3xl rounded-bl-3xl bg-secondary-foreground">
+        <div className="fixed flex flex-col left-0 w-20 h-screen rounded-tl-3xl rounded-bl-3xl bg-background">
             <div className="flex w-full h-[95vh] justify-center flex-col">
 
                 <div className="transition-all duration-500 transform hover:rotate-180 cursor-pointer flex  justify-center ">
@@ -56,20 +56,21 @@ export default async function Sidebar() {
 
                 <div className="flex flex-col w-full h-[60vh] items-center justify-center  gap-4">
                     <div className="flex justify-center place-items-center-safe h-10 w-10">
-                        <MessageCircle className="transition-all scale:100 duration-300 text-primary transform hover:rotate-360 cursor-pointer hover:scale-125" />
-
+                        <Link href="/Chatbot">
+                        <MessageCircle className="transition-all scale:100 duration-300 text-secondary-foreground transform hover:rotate-360 cursor-pointer hover:scale-125" />
+                        </Link>
                     </div>
                     <div className="flex justify-center place-items-center-safe h-10 w-10">
-                        <Gamepad className="transition-all scale:100 duration-300 text-primary transform hover:rotate-360 cursor-pointer hover:scale-125" />
+                        <Gamepad className="transition-all scale:100 duration-300 text-secondary-foreground transform hover:rotate-360 cursor-pointer hover:scale-125" />
 
                     </div>
 
                     <div className="flex justify-center place-items-center-safe  h-10 w-10">
-                        <Book className="transition-all scale:100 duration-300 text-primary transform hover:rotate-360 cursor-pointer hover:scale-125" />
+                        <Book className="transition-all scale:100 duration-300 text-secondary-foreground transform hover:rotate-360 cursor-pointer hover:scale-125" />
 
                     </div>
                     <div className="flex justify-center place-items-center-safe h-10 w-10">
-                        <User className="transition-all scale:100 duration-300 text-primary transform hover:rotate-360 cursor-pointer hover:scale-125" />
+                        <User className="transition-all scale:100 duration-300 text-secondary-foreground transform hover:rotate-360 cursor-pointer hover:scale-125" />
 
                     </div>
 

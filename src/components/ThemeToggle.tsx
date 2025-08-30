@@ -20,7 +20,7 @@ export default function ThemeToggle({className, ...props} : React.HTMLAttributes
     <DropdownMenu>
       <DropdownMenuTrigger asChild className="">
         <Button variant="ghost" 
-         className=" w-50px h-50px bg-secondary-foreground text-primary cursor-pointer rounded-full">
+         className=" w-50px h-50px bg-background text-accent-foreground cursor-pointer rounded-full">
           <Sun className="h-40px w-40px scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
           <Moon className="absolute h-20 w-20 scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
           {/* <span className="sr-only">Toggle theme</span> */}
