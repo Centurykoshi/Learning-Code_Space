@@ -18,8 +18,8 @@ export default function chatbot() {
           particleBaseSize={30}
         />
       </div>
-      <div className=" flex justify-center items-end w-full h-screen">
-        <div className="w-full max-w-[680px] sm:max-w-[75vw] p-4 sm:p-2">
+      <div className="fixed  flex justify-center items-end w-full h-screen left-20">
+        <div className="max-w-[50vw] w-full sm:max-w-[45vw]  lg:max-w-[50vw] p-4 sm:p-2 mb-10">
           <ChatbotForm />
         </div>
       </div>
