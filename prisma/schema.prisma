@@ -13,6 +13,17 @@ enum UserRole {
   ADMIN
 }
 
+enum MessageSender {
+  USER
+  BOT
+}
+
+enum MessageType { 
+  TEXT
+  IMAGE 
+  CODE
+}
+
 model Post {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
@@ -47,6 +58,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   posts        Post[]
+  chatbotConversations ChatbotConversation[]
 
   @@map("users")
 }
@@ -143,4 +155,36 @@ model Question {
 
   @@index([gameId])
   @@map("questions")
+}
+
+model ChatbotConversation {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  title     String?
+  isActive  Boolean  @default(true)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  messages ChatbotMessage[]
+
+  @@index([userId])
+  @@map("chatbot_conversations")
+}
+
+model ChatbotMessage { 
+  id             String   @id @default(uuid())
+  createdAt      DateTime @default(now())
+
+  content        String
+  sender         MessageSender
+  messageType    MessageType @default(TEXT)
+
+  conversationId String
+  conversation   ChatbotConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade) 
+
+  @@index([conversationId])
+  @@map("chatbot_messages")
 }
