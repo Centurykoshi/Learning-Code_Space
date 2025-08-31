@@ -1,12 +1,12 @@
 
-import { ChatbotForm } from "@/ChatbotComponents/chatbotform";
 import LightRays from "@/ChatbotComponents/LightRayComponent";
 import Particles from "@/ChatbotComponents/Particles";
+import ChatbotForm from "@/ChatbotComponents/ChatGem";
 
 export default function chatbot() {
 
   return (
-    <div className="min-h-screen min-w-screen flex">
+    <div className="min-h-screen min-w-screen relative overflow-hidden">
 
       <div className="absolute opacity-100 pointer-events-none top-0 left-0 w-full h-full z-10 fade-in animate-in duration-5000">
         <LightRays className="bg-transparent" />
@@ -18,11 +18,11 @@ export default function chatbot() {
           particleBaseSize={30}
         />
       </div>
-      <div className="fixed  flex justify-center items-end w-full h-screen left-20">
-        <div className="max-w-[50vw] w-full sm:max-w-[45vw]  lg:max-w-[50vw] p-4 sm:p-2 mb-10">
+      {/* <div className="fixed inset-0 flex justify-center items-center mb-20 left-20 p-4">
+     <div className="w-full max-w-4xl h-full max-h-[95vh]">
           <ChatbotForm />
         </div>
-      </div>
+      </div> */}
     </div>
   )
 }

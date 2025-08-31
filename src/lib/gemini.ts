@@ -1,7 +1,5 @@
-
 import { PrismaClient } from "@/generated/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-
 
 const genAi = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 const prisma = new PrismaClient(); 
@@ -22,7 +20,7 @@ async function getUserData(userId: string): Promise<UserData | null> {
         name: true,
         age: true,
         gender: true,
-      }
+      },
     });
     return user;
   } catch (error) {
@@ -31,66 +29,75 @@ async function getUserData(userId: string): Promise<UserData | null> {
   }
 }
 
-// Create personalized system prompt
-function createSystemPrompt(User: UserData): string {
-  let ageGuidance = "";
-  
-  if (User.age !== null) {
-    if (User.age < 18) {
-      ageGuidance = "Use simple, encouraging language. Focus on school and family issues.";
-    } else if (User.age < 30) {
-      ageGuidance = "Address career, relationships, and life transition challenges.";
-    } else if (User.age < 50) {
-      ageGuidance = "Focus on work-life balance, family responsibilities, and personal growth.";
+// Create personalized system prompt dynamically
+function createSystemPrompt(user: UserData, userMessage: string): string {
+  // Decide guidance based on age, but don't include age in output repeatedly
+  let guidance = "";
+  if (user.age !== null) {
+    if (user.age < 13) {
+      guidance = "Use very simple, friendly, and supportive language. Focus on school, hobbies, family, and social confidence.";
+    } else if (user.age < 18) {
+      guidance = "Use encouraging and relatable language. Focus on school, friendships, self-esteem, and family support.";
+    } else if (user.age < 30) {
+      guidance = "Address career, relationships, and life transition challenges.";
+    } else if (user.age < 50) {
+      guidance = "Focus on work-life balance, family responsibilities, and personal growth.";
     } else {
-      ageGuidance = "Consider health, life reflection, and finding continued purpose.";
+      guidance = "Consider health, life reflection, and finding continued purpose.";
     }
   } else {
-    ageGuidance = "Address general life challenges and personal growth.";
+    guidance = "Address general life challenges and personal growth.";
   }
 
-  return `You are Dr. Maya, a compassionate mental health expert. 
+  // Adjust response length based on user message length
+  const isShortMessage = userMessage.trim().length < 20;
+  const lengthInstruction = isShortMessage
+    ? "Respond naturally and concisely, just a few sentences."
+    : "Provide detailed, helpful, and empathetic responses (150-400 words).";
 
-USER: ${User.name}, ${User.age ? User.age + ' years old' : 'age not specified'}, ${User.gender || 'gender not specified'}
+  return `
+You are Dr. Maya, a compassionate mental health expert.
+
+USER: ${user.name}${user.gender ? `, ${user.gender}` : ''}
 
 INSTRUCTIONS:
-- Always use ${User.name}'s name in your response
-- ${ageGuidance}
-- Provide comprehensive, helpful responses (300-600 words)
-- Be warm, empathetic, and professional
-- Give practical advice and coping strategies
-- Ask follow-up questions to help them reflect
+- Use ${user.name}'s name naturally in your responses.
+- ${guidance}
+- ${lengthInstruction}
+- Be warm, empathetic, and professional.
+- Give practical advice and coping strategies when appropriate.
+- Ask follow-up questions to help the user reflect.
+- Do not mention the user's age unless specifically asked.
+- Use formatting such as paragraphs, bullet points, or numbered lists when helpful for clarity.
 
-Respond as if you're talking to ${User.name} personally, considering their age and background.`;
+Respond personally and thoughtfully to ${user.name}'s message.
+`;
 }
 
 // Main function to generate personalized response
 export async function generateText(userId: string, userMessage: string): Promise<string> {
   try {
-    // Fetch user data from database
-    const User = await getUserData(userId);
-    if (!User) {
+    // Fetch user data
+    const user = await getUserData(userId);
+    if (!user) {
       return "I'm sorry, I couldn't find your profile. Please make sure you're logged in.";
     }
 
     // Create AI model
     const model = genAi.getGenerativeModel({
-      model: "gemini-2.5-flash", // Use the stable model
+      model: "gemini-2.5-flash",
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 4000,
+        maxOutputTokens: 2000,
       },
     });
 
-    // Create personalized system prompt
-    const systemPrompt = createSystemPrompt(User);
-
-    // Combine system prompt and user message
+    // Create personalized prompt
+    const systemPrompt = createSystemPrompt(user, userMessage);
     const fullPrompt = `${systemPrompt}\n\nUser: ${userMessage}`;
 
     // Generate response
     const result = await model.generateContent(fullPrompt);
-
     const response = await result.response;
     return response.text();
 
