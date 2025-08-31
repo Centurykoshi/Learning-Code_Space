@@ -18,9 +18,9 @@ enum MessageSender {
   BOT
 }
 
-enum MessageType { 
+enum MessageType {
   TEXT
-  IMAGE 
+  IMAGE
   CODE
 }
 
@@ -43,21 +43,21 @@ model User {
   createdAt DateTime
   updatedAt DateTime
 
-  name          String
-  email         String    @unique
-  emailVerified Boolean
-  image         String?
-  age  Int? 
-  gender String? 
-  profileCompleted Boolean @default(false)
-  role          UserRole  @default(USER)
-  banned        Boolean?
-  banReason     String?
-  banExpires    DateTime?
-  games         Game[]
-  accounts      Account[]
-  sessions      Session[]
-  posts        Post[]
+  name                 String
+  email                String                @unique
+  emailVerified        Boolean
+  image                String?
+  age                  Int?
+  gender               String?
+  profileCompleted     Boolean               @default(false)
+  role                 UserRole              @default(USER)
+  banned               Boolean?
+  banReason            String?
+  banExpires           DateTime?
+  games                Game[]
+  accounts             Account[]
+  sessions             Session[]
+  posts                Post[]
   chatbotConversations ChatbotConversation[]
 
   @@map("users")
@@ -132,8 +132,6 @@ model Game {
   @@map("games")
 }
 
-
-
 model topic_count {
   id    String @id @default(uuid())
   topic String @unique
@@ -162,8 +160,8 @@ model ChatbotConversation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  title     String?
-  isActive  Boolean  @default(true)
+  title    String?
+  isActive Boolean @default(true)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -174,16 +172,16 @@ model ChatbotConversation {
   @@map("chatbot_conversations")
 }
 
-model ChatbotMessage { 
-  id             String   @id @default(uuid())
-  createdAt      DateTime @default(now())
+model ChatbotMessage {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
 
-  content        String
-  sender         MessageSender
-  messageType    MessageType @default(TEXT)
+  content     String
+  sender      MessageSender
+  messageType MessageType   @default(TEXT)
 
   conversationId String
-  conversation   ChatbotConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade) 
+  conversation   ChatbotConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
   @@map("chatbot_messages")
