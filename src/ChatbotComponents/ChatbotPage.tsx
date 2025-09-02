@@ -1,16 +1,20 @@
 // components/ChatbotForm.tsx
 "use client";
-import React from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { AnimatedHeader } from "./ChatbotAnimations";
 import { useConversation } from "@/hooks/useConversation";
 import { MessageDisplay } from "./MessasgeDisplay";
 import { ChatForm } from "./chatbotform";
 import { ChatbotFormProps } from "@/types/types";
+import { contain } from "three/src/extras/TextureUtils.js";
 
 // Conversation ID Display Component
 const ConversationIdDisplay = ({ conversationId }: { conversationId?: string }) => {
     console.log("ConversationIdDisplay rendered with:", conversationId);
+    const [click, setclicked] = useState(false);
+
+
 
     return (
         <motion.div
@@ -24,7 +28,10 @@ const ConversationIdDisplay = ({ conversationId }: { conversationId?: string }) 
                         <>
                             Conversation ID:
                             <span className="ml-2 font-mono text-xs bg-muted/50 px-2 py-1 rounded">
-                                {conversationId}
+
+                                <button onClick={() => setclicked(!click)} className="cursor">
+                                    {click ? "***********" : conversationId}
+                                </button>
                             </span>
                         </>
                     ) : (
@@ -54,6 +61,14 @@ export default function ChatbotForm({ chat, conversationId }: ChatbotFormProps) 
         setIsTyping,
     } = useConversation({ chat, conversationId });
 
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
+    }, [messages])
+
     const handleSubmit = async (data: { value: string; conversationId?: string }) => {
         console.log("handleSubmit called with data:", data);
         const result = await sendMessage.mutateAsync(data);
@@ -82,12 +97,14 @@ export default function ChatbotForm({ chat, conversationId }: ChatbotFormProps) 
                 >
                     {messages.length > 0 ? (
                         <motion.div
-                            className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
+                            ref={containerRef}
+                            className="flex-1 overflow-y-auto custom-scrollbar"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: 0.2 }}
                         >
-                            <div className="px-6 py-4 min-h-full">
+                            <div className="px-6 py-4 min-h-full"
+                            >
                                 <MessageDisplay
                                     messages={messages}
                                     isTyping={sendMessage.isPending}

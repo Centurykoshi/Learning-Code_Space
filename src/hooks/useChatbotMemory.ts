@@ -28,23 +28,27 @@ interface ConversationMemory {
 export function useChatbotMemory(conversationId?: string) {
     const trpc = useTRPC();
 
-    // Get conversation with memory
-    const { data: conversation, isLoading, error } = useQuery({
-        queryKey: ['conversation', conversationId],
-        queryFn: () => conversationId ? trpc.chatbot.getConversation.query({ conversationId }) : null,
+    // Get conversation with memory using correct tRPC pattern
+    const conversationQuery = useQuery({
+        ...trpc.chatbot.getConversation.queryOptions({
+            conversationId: conversationId!
+        }),
         enabled: !!conversationId,
         staleTime: 30000, // Consider data fresh for 30 seconds
     });
 
     // Get all user conversations
-    const { data: allConversations, isLoading: isLoadingAll } = useQuery({
-        queryKey: ['userConversations'],
-        queryFn: () => trpc.chatbot.getUserConversations.query(),
+    const allConversationsQuery = useQuery({
+        ...trpc.chatbot.getUserConversations.queryOptions(),
         staleTime: 60000, // Consider data fresh for 1 minute
     });
 
+    const conversation = conversationQuery.data;
+    const allConversations = allConversationsQuery.data;
+
     // Extract memory data
-    const memoryData: MemoryData = conversation?.memory as MemoryData || {};
+   const memoryData = (conversation?.memory ?? {}) as MemoryData;
+
     const summary = conversation?.summary;
 
     // Helper functions
@@ -83,7 +87,7 @@ export function useChatbotMemory(conversationId?: string) {
         const recentConversations = allConversations.slice(0, 5);
         const allTopics: string[] = [];
 
-        recentConversations.forEach(conv => {
+        recentConversations.forEach((conv: any) => {
             const convMemory = conv.memory as MemoryData;
             if (convMemory?.keyTopics) {
                 allTopics.push(...convMemory.keyTopics);
@@ -103,7 +107,7 @@ export function useChatbotMemory(conversationId?: string) {
         return {
             frequentTopics: sortedTopics,
             totalConversations: allConversations.length,
-            recentConversations: recentConversations.map(conv => ({
+            recentConversations: recentConversations.map((conv: any) => ({
                 id: conv.id,
                 title: conv.title,
                 messageCount: conv._count?.messages || 0,
@@ -121,9 +125,9 @@ export function useChatbotMemory(conversationId?: string) {
         summary,
 
         // Loading states
-        isLoading,
-        isLoadingAll,
-        error,
+        isLoading: conversationQuery.isLoading,
+        isLoadingAll: allConversationsQuery.isLoading,
+        error: conversationQuery.error || allConversationsQuery.error,
 
         // Helper functions
         getKeyTopics,

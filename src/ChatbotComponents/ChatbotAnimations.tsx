@@ -87,9 +87,9 @@ export const AnimatedFormContainer = ({ children, isFocused }: { children: React
             >
                 <motion.div
                     className={cn(
-                        "relative border-2 p-6 rounded-2xl bg-background/50 backdrop-blur-sm transition-all duration-300",
+                        "relative border-2 p-6 rounded-2xl bg-background/10 backdrop-blur-sm transition-all duration-300",
                         isFocused
-                            ? "border-primary/50 shadow-lg shadow-primary/10 bg-background/80"
+                            ? "border-primary/50 shadow-lg shadow-primary/60 bg-background/10"
                             : "border-border/50 hover:border-border"
                     )}
                     animate={{
@@ -257,6 +257,7 @@ export const AnimatedSubmitButton = ({
                         animate={{ opacity: 1, rotate: 0 }}
                         exit={{ opacity: 0, rotate: 90 }}
                         transition={{ duration: 0.15 }}
+                        
                     >
                         <Sparkles className="w-5 h-5 text-secondary-foreground" />
                     </motion.div>
