@@ -8,10 +8,10 @@ export default function chatbot() {
   return (
     <div className="min-h-screen min-w-screen relative overflow-hidden">
 
-      <div className="absolute opacity-100 pointer-events-none top-0 left-0 w-full h-full z-10 fade-in animate-in duration-5000">
+      <div className="absolute opacity-100 pointer-events-none top-0 left-0 w-full h-full -z-10 fade-in animate-in duration-5000">
         <LightRays className="bg-transparent" />
       </div>
-      <div className="absolute pointer-events-none top-0 left-0 w-full h-full z-10 fade-in animate-in duration-5000">
+      <div className="absolute pointer-events-none top-0 left-0 w-full h-full -z-10 fade-in animate-in duration-5000">
         <Particles
           className="bg-transparent"
           particleCount={400}

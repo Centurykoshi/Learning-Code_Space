@@ -1,7 +1,35 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Custom scrollbar styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.5);
+}
+
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 84, 230, 0.3) transparent;
+}
+
+
 @custom-variant dark (&:is(.dark *));
+
+
+
 
 :root {
   --background: oklch(0.9582 0.0152 90.2357);
