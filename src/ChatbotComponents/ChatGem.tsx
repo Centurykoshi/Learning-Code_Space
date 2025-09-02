@@ -2,13 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MarkdownRenderer } from "./MarkdownRender";
- // Import your existing AnimatedHeader
+// Import your existing AnimatedHeader
 import { PulseWaveIndicator, WaveIndicator, TypewriterIndicator } from "./TypingIndicator"; // Import the new animations
 import {
     AnimatedFormContainer,
     AnimatedTextarea,
     TypingIndicator,
-    AnimatedBottomBar, 
+    AnimatedBottomBar,
     AnimatedHeader
 } from "./ChatbotAnimations";
 import { FormProvider, useForm } from "react-hook-form";
@@ -19,12 +19,18 @@ import TextareaAutosize from 'react-textarea-autosize';
 import { useTRPC } from "@/trpc/client";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ChatbotConversation } from "@/generated/prisma";
 
 interface Message {
     id: string;
     content: string;
     role: "user" | "assistant";
     timestamp: Date;
+}
+
+interface ChatbotFormProps {
+    chat?: any; // The conversation data from the page
+    conversationId?: string; // The conversation ID
 }
 
 const formSchema = z.object({
@@ -41,26 +47,25 @@ const MessageDisplay = ({ messages, isTyping }: { messages: Message[], isTyping:
                     key={message.id}
                     initial={{ opacity: 0, y: 20, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ 
-                        duration: 0.4, 
+                    transition={{
+                        duration: 0.4,
                         delay: index * 0.1,
                         ease: "easeOut"
                     }}
-                    className={`flex w-full ${
-                        message.role === "user" ? "justify-end" : "justify-start"
-                    }`}
+                    className={`flex w-full ${message.role === "user" ? "justify-end" : "justify-start"
+                        }`}
                 >
                     <div
                         className={`
                             max-w-[85%] rounded-2xl px-4 py-3 shadow-sm
-                            ${message.role === "user" 
-                                ? "bg-primary/20 text-secondary-foreground ml-auto " 
-                                : "bg-muted/50 text-foreground mr-auto border border-border/50" 
+                            ${message.role === "user"
+                                ? "bg-primary/20 text-secondary-foreground ml-auto "
+                                : "bg-muted/50 text-foreground mr-auto border border-border/50"
                             }
                         `}
                     >
                         {message.role === "assistant" ? (
-                            <MarkdownRenderer 
+                            <MarkdownRenderer
                                 content={message.content}
                                 className="text-sm"
                             />
@@ -69,20 +74,20 @@ const MessageDisplay = ({ messages, isTyping }: { messages: Message[], isTyping:
                                 {message.content}
                             </p>
                         )}
-                        
+
                         <div className={`
                             text-xs mt-2 opacity-60
                             ${message.role === "user" ? "text-right" : "text-left"}
                         `}>
-                            {message.timestamp.toLocaleTimeString([], { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
+                            {message.timestamp.toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit'
                             })}
                         </div>
                     </div>
                 </motion.div>
             ))}
-            
+
             {/* Typing indicator with better animation */}
             {isTyping && (
                 <motion.div
@@ -92,7 +97,7 @@ const MessageDisplay = ({ messages, isTyping }: { messages: Message[], isTyping:
                     className="flex justify-start"
                 >
                     <div className=" rounded-2xl px-4 py-3 ">
-                     <WaveIndicator />
+                        <WaveIndicator />
                         {/* Replace this with any of the animations above */}
                         {/* <PulseWaveIndicator /> */}
                         {/* Alternative options:
@@ -110,12 +115,26 @@ const MessageDisplay = ({ messages, isTyping }: { messages: Message[], isTyping:
 };
 
 // Main Chatbot Component
-export default function ChatbotForm() {
+export default function ChatbotForm({ chat, conversationId }: ChatbotFormProps) {
     const trpc = useTRPC();
     const [messages, setMessages] = useState<Message[]>([]);
     const [isFocused, setIsFocused] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
     const [charCount, setCharCount] = useState(0);
+    const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(conversationId);
+
+    // Initialize messages from existing chat
+    useEffect(() => {
+        if (chat && chat.messages) {
+            const formattedMessages: Message[] = chat.messages.map((msg: any) => ({
+                id: msg.id,
+                content: msg.content,
+                role: msg.sender === 'USER' ? 'user' : 'assistant',
+                timestamp: new Date(msg.createdAt),
+            }));
+            setMessages(formattedMessages);
+        }
+    }, [chat]);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -125,7 +144,12 @@ export default function ChatbotForm() {
     const sendMessage = useMutation(trpc.ResponseRouter.Response.mutationOptions({
         onSuccess: (data, variables) => {
             console.log("Mutation onSuccess called with data:", data);
-           
+
+            // Update conversation ID if it's new
+            if (data.conversationId && !currentConversationId) {
+                setCurrentConversationId(data.conversationId);
+            }
+
             // Add user message first
             const userMessage: Message = {
                 id: `user-${Date.now()}`,
@@ -155,7 +179,10 @@ export default function ChatbotForm() {
     const handleSubmit = async (data: z.infer<typeof formSchema>) => {
         console.log("handleSubmit called with data:", data);
         try {
-            const result = await sendMessage.mutateAsync({ value: data.value });
+            const result = await sendMessage.mutateAsync({
+                value: data.value,
+                conversationId: currentConversationId
+            });
             console.log("Mutation completed with result:", result);
         } catch (error) {
             console.error("Error in handleSubmit:", error);
@@ -190,71 +217,71 @@ export default function ChatbotForm() {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6 }}
             >
-                    {/* Header Section - Use your existing AnimatedHeader */}
-                
+                {/* Header Section - Use your existing AnimatedHeader */}
 
-                    {/* Messages Section */}
-                    <motion.div
-                        className="flex-1 overflow-hidden flex flex-col min-h-0"
-                        layout
-                    >
-                        {messages.length > 0 ? (
-                            <motion.div
-                                className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: 0.2 }}
-                            >
-                                <div className="px-6 py-4 min-h-full">
-                                    <MessageDisplay
-                                        messages={messages}
-                                        isTyping={sendMessage.isPending}
-                                    />
-                                </div>
-                            </motion.div>
-                        ) : (
-                            <div className="flex-1"></div>
-                        )}
-                    </motion.div>
 
-                    {/* Form Section */}
-                    <div className="flex-shrink-0 bg-transparent">
-                            {showHeader && (
+                {/* Messages Section */}
+                <motion.div
+                    className="flex-1 overflow-hidden flex flex-col min-h-0"
+                    layout
+                >
+                    {messages.length > 0 ? (
+                        <motion.div
+                            className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                        >
+                            <div className="px-6 py-4 min-h-full">
+                                <MessageDisplay
+                                    messages={messages}
+                                    isTyping={sendMessage.isPending}
+                                />
+                            </div>
+                        </motion.div>
+                    ) : (
+                        <div className="flex-1"></div>
+                    )}
+                </motion.div>
+
+                {/* Form Section */}
+                <div className="flex-shrink-0 bg-transparent">
+                    {showHeader && (
                         <div className="flex-shrink-0">
                             <AnimatedHeader />
                         </div>
                     )}
-                        <FormProvider {...form}>
-                            <AnimatedFormContainer isFocused={isFocused}>
-                                <FormField
-                                    control={form.control}
-                                    name="value"
-                                    render={({ field }) => (
-                                        <TextareaAutosize
-                                            {...field}
-                                            onFocus={() => setIsFocused(true)}
-                                            onBlur={() => setIsFocused(false)}
-                                            onKeyDown={handleKeyDown}
-                                            minRows={2}
-                                            maxRows={8}
-                                            className="w-full resize-none border-none bg-transparent text-foreground placeholder-muted-foreground/60 outline-none text-lg leading-relaxed"
-                                            placeholder="Type your message here..."
-                                        />
-                                    )}
-                                />
+                    <FormProvider {...form}>
+                        <AnimatedFormContainer isFocused={isFocused}>
+                            <FormField
+                                control={form.control}
+                                name="value"
+                                render={({ field }) => (
+                                    <TextareaAutosize
+                                        {...field}
+                                        onFocus={() => setIsFocused(true)}
+                                        onBlur={() => setIsFocused(false)}
+                                        onKeyDown={handleKeyDown}
+                                        minRows={2}
+                                        maxRows={8}
+                                        className="w-full resize-none border-none bg-transparent text-foreground placeholder-muted-foreground/60 outline-none text-lg leading-relaxed"
+                                        placeholder="Type your message here..."
+                                    />
+                                )}
+                            />
 
-                                <TypingIndicator isTyping={isTyping} />
+                            <TypingIndicator isTyping={isTyping} />
 
-                                <AnimatedBottomBar
-                                    charCount={charCount}
-                                    isTyping={isTyping}
-                                    isPending={sendMessage.isPending}
-                                    onSubmit={form.handleSubmit(handleSubmit)}
-                                />
-                            </AnimatedFormContainer>
-                        </FormProvider>
-                    </div>
-                </motion.div>
+                            <AnimatedBottomBar
+                                charCount={charCount}
+                                isTyping={isTyping}
+                                isPending={sendMessage.isPending}
+                                onSubmit={form.handleSubmit(handleSubmit)}
+                            />
+                        </AnimatedFormContainer>
+                    </FormProvider>
+                </div>
+            </motion.div>
         </div>
     );
 }

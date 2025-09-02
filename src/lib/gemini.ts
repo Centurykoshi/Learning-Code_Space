@@ -2,7 +2,7 @@ import { PrismaClient } from "@/generated/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAi = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const prisma = new PrismaClient(); 
+const prisma = new PrismaClient();
 
 // Simple user interface
 interface UserData {
@@ -29,8 +29,8 @@ async function getUserData(userId: string): Promise<UserData | null> {
   }
 }
 
-// Create personalized system prompt dynamically
-function createSystemPrompt(user: UserData, userMessage: string): string {
+// Create personalized system prompt with memory context
+function createSystemPrompt(user: UserData, userMessage: string, conversationHistory?: any): string {
   // Decide guidance based on age, but don't include age in output repeatedly
   let guidance = "";
   if (user.age !== null) {
@@ -55,6 +55,44 @@ function createSystemPrompt(user: UserData, userMessage: string): string {
     ? "Respond naturally and concisely, just a few sentences."
     : "Provide detailed, helpful, and empathetic responses (150-400 words).";
 
+  // Build memory context if available
+  let memoryContext = "";
+  if (conversationHistory?.memory) {
+    const memory = conversationHistory.memory;
+    if (memory.keyTopics?.length > 0) {
+      memoryContext += `\nREMEMBER: Previous topics discussed: ${memory.keyTopics.join(', ')}.`;
+    }
+    if (memory.userMentions) {
+      if (memory.userMentions.mentionedNames?.length > 0) {
+        memoryContext += ` User mentioned these names: ${memory.userMentions.mentionedNames.join(', ')}.`;
+      }
+      if (memory.userMentions.mentionedPlaces?.length > 0) {
+        memoryContext += ` Places mentioned: ${memory.userMentions.mentionedPlaces.join(', ')}.`;
+      }
+    }
+    if (memory.importantMessages?.length > 0) {
+      const recentImportant = memory.importantMessages.slice(-2);
+      memoryContext += `\nIMPORTANT CONTEXT: ${recentImportant.map(msg =>
+        `User said: "${msg.userMessage.substring(0, 100)}..."`
+      ).join(' ')}`;
+    }
+  }
+
+  // Add conversation summary if available
+  let summaryContext = "";
+  if (conversationHistory?.summary) {
+    summaryContext = `\nCONVERSATION SUMMARY: ${conversationHistory.summary}`;
+  }
+
+  // Add recent message history for context
+  let historyContext = "";
+  if (conversationHistory?.messages?.length > 1) {
+    const recentMessages = conversationHistory.messages.slice(-6); // Last 6 messages
+    historyContext = "\nRECENT CONVERSATION:\n" + recentMessages.map(msg =>
+      `${msg.sender === 'USER' ? user.name : 'Dr. Maya'}: ${msg.content.substring(0, 200)}${msg.content.length > 200 ? '...' : ''}`
+    ).join('\n');
+  }
+
   return `
 You are Dr. Maya, a compassionate mental health expert.
 
@@ -69,13 +107,15 @@ INSTRUCTIONS:
 - Ask follow-up questions to help the user reflect.
 - Do not mention the user's age unless specifically asked.
 - Use formatting such as paragraphs, bullet points, or numbered lists when helpful for clarity.
+- Reference previous conversations naturally when relevant.
+${memoryContext}${summaryContext}${historyContext}
 
-Respond personally and thoughtfully to ${user.name}'s message.
+Respond personally and thoughtfully to ${user.name}'s message, taking into account our conversation history.
 `;
 }
 
-// Main function to generate personalized response
-export async function generateText(userId: string, userMessage: string): Promise<string> {
+// Main function to generate personalized response with memory
+export async function generateText(userId: string, userMessage: string, conversationHistory?: any): Promise<string> {
   try {
     // Fetch user data
     const user = await getUserData(userId);
@@ -92,8 +132,8 @@ export async function generateText(userId: string, userMessage: string): Promise
       },
     });
 
-    // Create personalized prompt
-    const systemPrompt = createSystemPrompt(user, userMessage);
+    // Create personalized prompt with memory context
+    const systemPrompt = createSystemPrompt(user, userMessage, conversationHistory);
     const fullPrompt = `${systemPrompt}\n\nUser: ${userMessage}`;
 
     // Generate response

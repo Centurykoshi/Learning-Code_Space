@@ -1,11 +1,17 @@
+// trpc/routers/chatbot.ts - Chatbot-specific TRPC routes
 import { z } from "zod";
 import { generateText } from "@/lib/gemini";
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import prisma from "@/lib/prisma";
 import { TRPCError } from "@trpc/server";
+import {
+    calculateImportanceScore,
+    updateConversationMemory
+} from "@/lib/memory-utils";
 
-export const ResponseRouter = createTRPCRouter({
-    Response: baseProcedure
+export const chatbotRouter = createTRPCRouter({
+    // Send message to chatbot
+    sendMessage: baseProcedure
         .input(z.object({
             value: z.string()
                 .min(1, "Message can't be less than 3 characters or empty")
@@ -52,17 +58,38 @@ export const ResponseRouter = createTRPCRouter({
                     }
                 }
 
-                // Save user message to database
+                // Get conversation history and memory for context
+                const conversationWithHistory = await prisma.chatbotConversation.findFirst({
+                    where: {
+                        id: conversationId,
+                        userId: userId
+                    },
+                    include: {
+                        messages: {
+                            orderBy: {
+                                createdAt: 'asc'
+                            },
+                            take: 20 // Get last 20 messages for context
+                        }
+                    }
+                });
+
+                // Calculate importance score for the user message (1-10 scale)
+                const importanceScore = calculateImportanceScore(input.value);
+
+                // Save user message to database with importance
                 const userMessage = await prisma.chatbotMessage.create({
                     data: {
                         conversationId: conversationId,
                         content: input.value,
                         sender: 'USER',
+                        importance: importanceScore,
+                        tokenCount: input.value.split(' ').length
                     }
                 });
 
-                // Generate AI response
-                const response = await generateText(userId, input.value);
+                // Generate AI response with memory context
+                const response = await generateText(userId, input.value, conversationWithHistory);
 
                 // Save AI response to database
                 const aiMessage = await prisma.chatbotMessage.create({
@@ -70,8 +97,12 @@ export const ResponseRouter = createTRPCRouter({
                         conversationId: conversationId,
                         content: response,
                         sender: 'BOT',
+                        tokenCount: response.split(' ').length
                     }
                 });
+
+                // Update conversation memory and summary
+                await updateConversationMemory(conversationId, conversationWithHistory?.messages || [], input.value, response);
 
                 // Update conversation's updatedAt timestamp
                 await prisma.chatbotConversation.update({
@@ -87,7 +118,7 @@ export const ResponseRouter = createTRPCRouter({
                 };
 
             } catch (error) {
-                console.error('Error in Response mutation:', error);
+                console.error('Error in sendMessage mutation:', error);
 
                 if (error instanceof TRPCError) {
                     throw error;
@@ -100,7 +131,7 @@ export const ResponseRouter = createTRPCRouter({
             }
         }),
 
-    // Additional procedure to get conversation history
+    // Get conversation by ID
     getConversation: baseProcedure
         .input(z.object({
             conversationId: z.string()
@@ -161,6 +192,9 @@ export const ResponseRouter = createTRPCRouter({
                         orderBy: {
                             createdAt: 'desc'
                         }
+                    },
+                    _count: {
+                        select: { messages: true }
                     }
                 },
                 orderBy: {
@@ -169,5 +203,86 @@ export const ResponseRouter = createTRPCRouter({
             });
 
             return conversations;
+        }),
+
+    // Delete a conversation
+    deleteConversation: baseProcedure
+        .input(z.object({
+            conversationId: z.string()
+        }))
+        .mutation(async ({ input, ctx }) => {
+            const userId = ctx.userId;
+
+            if (!userId) {
+                throw new TRPCError({
+                    code: 'UNAUTHORIZED',
+                    message: 'You must be logged in to delete conversations.',
+                });
+            }
+
+            // Verify the conversation exists and belongs to the user
+            const conversation = await prisma.chatbotConversation.findFirst({
+                where: {
+                    id: input.conversationId,
+                    userId: userId
+                }
+            });
+
+            if (!conversation) {
+                throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: 'Conversation not found or you do not have access to it.',
+                });
+            }
+
+            // Delete the conversation (messages will be deleted due to cascade)
+            await prisma.chatbotConversation.delete({
+                where: { id: input.conversationId }
+            });
+
+            return { success: true };
+        }),
+
+    // Update conversation title
+    updateConversationTitle: baseProcedure
+        .input(z.object({
+            conversationId: z.string(),
+            title: z.string().min(1).max(100)
+        }))
+        .mutation(async ({ input, ctx }) => {
+            const userId = ctx.userId;
+
+            if (!userId) {
+                throw new TRPCError({
+                    code: 'UNAUTHORIZED',
+                    message: 'You must be logged in to update conversations.',
+                });
+            }
+
+            // Verify the conversation exists and belongs to the user
+            const conversation = await prisma.chatbotConversation.findFirst({
+                where: {
+                    id: input.conversationId,
+                    userId: userId
+                }
+            });
+
+            if (!conversation) {
+                throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: 'Conversation not found or you do not have access to it.',
+                });
+            }
+
+            // Update the conversation title
+            const updatedConversation = await prisma.chatbotConversation.update({
+                where: { id: input.conversationId },
+                data: {
+                    title: input.title,
+                    updatedAt: new Date()
+                }
+            });
+
+            return updatedConversation;
         })
 });
