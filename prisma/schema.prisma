@@ -163,6 +163,9 @@ model ChatbotConversation {
   title    String?
   isActive Boolean @default(true)
 
+  summary String?
+  memory  Json?
+
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -179,6 +182,9 @@ model ChatbotMessage {
   content     String
   sender      MessageSender
   messageType MessageType   @default(TEXT)
+
+  tokenCount Int? 
+  importance Float? 
 
   conversationId String
   conversation   ChatbotConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
