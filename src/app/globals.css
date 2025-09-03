@@ -22,14 +22,10 @@
 /* Firefox */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 84, 230, 0.3) transparent;
+  scrollbar-color: rgba(66, 50, 40, 0.13) transparent;
 }
 
-
 @custom-variant dark (&:is(.dark *));
-
-
-
 
 :root {
   --background: oklch(0.9582 0.0152 90.2357);

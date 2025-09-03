@@ -49,6 +49,7 @@ export function useChatbotMemory(conversationId?: string) {
     // Extract memory data
    const memoryData = (conversation?.memory ?? {}) as MemoryData;
 
+
     const summary = conversation?.summary;
 
     // Helper functions

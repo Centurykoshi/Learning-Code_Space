@@ -1,125 +1,204 @@
-// components/ChatbotForm.tsx
 "use client";
-import React from "react";
-import { motion } from "framer-motion";
-import { AnimatedHeader } from "./ChatbotAnimations";
-import { useConversation } from "@/hooks/useConversation";
-import { MessageDisplay } from "./MessasgeDisplay";
-import { ChatForm } from "./chatbotform";
-import { ChatbotFormProps } from "@/types/types";
 
-// Conversation ID Display Component
-const ConversationIdDisplay = ({ conversationId }: { conversationId?: string }) => {
-    console.log("ConversationIdDisplay rendered with:", conversationId);
+import { useSidebar } from "ui/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "ui/tooltip";
+import { Toggle } from "ui/toggle";
+import {
+  AudioWaveformIcon,
+  ChevronDown,
+  MessageCircleDashed,
+  PanelLeft,
+} from "lucide-react";
+import { Button } from "ui/button";
+import { Separator } from "ui/separator";
 
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="px-6 py-2 border-b border-border/20 bg-muted/20"
-        >
-            <div className="flex items-center justify-between">
-                <div className="text-xs text-muted-foreground">
-                    {conversationId ? (
-                        <>
-                            Conversation ID:
-                            <span className="ml-2 font-mono text-xs bg-muted/50 px-2 py-1 rounded">
-                                {conversationId}
-                            </span>
-                        </>
-                    ) : (
-                        <span className="text-muted-foreground/50">
-                            New Conversation - ID will appear after first message
-                        </span>
-                    )}
-                </div>
-                <div className="text-xs text-green-500">
-                    ● {conversationId ? 'Active' : 'Ready'}
-                </div>
-            </div>
-        </motion.div>
-    );
-};
+import { useEffect, useMemo } from "react";
+import { ThreadDropdown } from "../thread-dropdown";
+import { appStore } from "@/app/store";
+import { usePathname } from "next/navigation";
+import { useShallow } from "zustand/shallow";
+import { getShortcutKeyList, Shortcuts } from "lib/keyboard-shortcuts";
+import { useTranslations } from "next-intl";
+import { TextShimmer } from "ui/text-shimmer";
 
-export default function ChatbotForm({ chat, conversationId }: ChatbotFormProps) {
-    const {
-        messages,
-        currentConversationId,
-        isTyping,
-        isFocused,
-        charCount,
-        sendMessage,
-        setIsFocused,
-        setCharCount,
-        setIsTyping,
-    } = useConversation({ chat, conversationId });
+export function AppHeader() {
+  const t = useTranslations();
+  const [appStoreMutate] = appStore(useShallow((state) => [state.mutate]));
+  const { toggleSidebar } = useSidebar();
+  const currentPaths = usePathname();
 
-    const handleSubmit = async (data: { value: string; conversationId?: string }) => {
-        console.log("handleSubmit called with data:", data);
-        const result = await sendMessage.mutateAsync(data);
-        console.log("Mutation completed with result:", result);
-        return result;
-    };
+  const componentByPage = useMemo(() => {
+    if (currentPaths.startsWith("/chat/")) {
+      return <ThreadDropdownComponent />;
+    }
+  }, [currentPaths]);
 
-    const showHeader = messages.length === 0;
-    const displayConversationId = currentConversationId || conversationId;
-
-    return (
-        <div className="w-full h-full flex flex-col rounded-lg border border-border/20 bg-background/50 backdrop-blur-sm">
-            {/* Conversation ID Display */}
-            <ConversationIdDisplay conversationId={displayConversationId} />
-
-            <motion.div
-                className="flex flex-col h-full"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6 }}
-            >
-                {/* Messages Section */}
-                <motion.div
-                    className="flex-1 overflow-hidden flex flex-col min-h-0"
-                    layout
+  return (
+    <header className="sticky top-0 z-50 flex items-center px-3 py-2">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Toggle
+            aria-label="Toggle Sidebar"
+            onClick={toggleSidebar}
+            data-testid="sidebar-toggle"
+          >
+            <PanelLeft />
+          </Toggle>
+        </TooltipTrigger>
+        <TooltipContent align="start" side="bottom">
+          <div className="flex items-center gap-2">
+            {t("KeyboardShortcuts.toggleSidebar")}
+            <div className="text-xs text-muted-foreground flex items-center gap-1">
+              {getShortcutKeyList(Shortcuts.toggleSidebar).map((key) => (
+                <span
+                  key={key}
+                  className="w-5 h-5 flex items-center justify-center bg-muted rounded "
                 >
-                    {messages.length > 0 ? (
-                        <motion.div
-                            className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: 0.2 }}
-                        >
-                            <div className="px-6 py-4 min-h-full">
-                                <MessageDisplay
-                                    messages={messages}
-                                    isTyping={sendMessage.isPending}
-                                />
-                            </div>
-                        </motion.div>
-                    ) : (
-                        <div className="flex-1"></div>
-                    )}
-                </motion.div>
+                  {key}
+                </span>
+              ))}
+            </div>
+          </div>
+        </TooltipContent>
+      </Tooltip>
 
-                {/* Form Section */}
-                <div className="flex-shrink-0 bg-transparent">
-                    {showHeader && (
-                        <div className="flex-shrink-0">
-                            <AnimatedHeader />
-                        </div>
-                    )}
+      {componentByPage}
+      <div className="flex-1" />
 
-                    <ChatForm
-                        isFocused={isFocused}
-                        isTyping={isTyping}
-                        charCount={charCount}
-                        isPending={sendMessage.isPending}
-                        currentConversationId={currentConversationId}
-                        onFocus={setIsFocused}
-                        onTypingChange={setIsTyping}
-                        onCharCountChange={setCharCount}
-                        onSubmit={handleSubmit}
-                    />
-                </div>
-            </motion.div>
+      <div className="flex items-center gap-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size={"icon"}
+              variant={"ghost"}
+              className="bg-secondary/40"
+              onClick={() => {
+                appStoreMutate((state) => ({
+                  voiceChat: {
+                    ...state.voiceChat,
+                    isOpen: true,
+                    agentId: undefined,
+                  },
+                }));
+              }}
+            >
+              <AudioWaveformIcon className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent align="end" side="bottom">
+            <div className="text-xs flex items-center gap-2">
+              {t("KeyboardShortcuts.toggleVoiceChat")}
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                {getShortcutKeyList(Shortcuts.toggleVoiceChat).map((key) => (
+                  <span
+                    className="w-5 h-5 flex items-center justify-center bg-muted rounded "
+                    key={key}
+                  >
+                    {key}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size={"icon"}
+              variant={"secondary"}
+              className="bg-secondary/40"
+              onClick={() => {
+                appStoreMutate((state) => ({
+                  temporaryChat: {
+                    ...state.temporaryChat,
+                    isOpen: !state.temporaryChat.isOpen,
+                  },
+                }));
+              }}
+            >
+              <MessageCircleDashed className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent align="end" side="bottom">
+            <div className="text-xs flex items-center gap-2">
+              {t("KeyboardShortcuts.toggleTemporaryChat")}
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                {getShortcutKeyList(Shortcuts.toggleTemporaryChat).map(
+                  (key) => (
+                    <span
+                      className="w-5 h-5 flex items-center justify-center bg-muted rounded "
+                      key={key}
+                    >
+                      {key}
+                    </span>
+                  ),
+                )}
+              </div>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    </header>
+  );
+}
+
+function ThreadDropdownComponent() {
+  const [threadList, currentThreadId, generatingTitleThreadIds] = appStore(
+    useShallow((state) => [
+      state.threadList,
+      state.currentThreadId,
+      state.generatingTitleThreadIds,
+    ]),
+  );
+  const currentThread = useMemo(() => {
+    return threadList.find((thread) => thread.id === currentThreadId);
+  }, [threadList, currentThreadId]);
+
+  useEffect(() => {
+    if (currentThread?.id) {
+      document.title = currentThread.title || "New Chat";
+    }
+  }, [currentThread?.id]);
+
+  if (!currentThread) return null;
+
+  return (
+    <div className="items-center gap-1 hidden md:flex">
+      <div className="w-1 h-4">
+        <Separator orientation="vertical" />
+      </div>
+
+      <ThreadDropdown
+        threadId={currentThread.id}
+        beforeTitle={currentThread.title}
+      >
+        <div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                className="data-[state=open]:bg-input! hover:text-foreground cursor-pointer flex gap-1 items-center px-2 py-1 rounded-md hover:bg-accent"
+              >
+                {generatingTitleThreadIds.includes(currentThread.id) ? (
+                  <TextShimmer className="truncate max-w-60 min-w-0 mr-1">
+                    {currentThread.title || "New Chat"}
+                  </TextShimmer>
+                ) : (
+                  <p className="truncate max-w-60 min-w-0 mr-1">
+                    {currentThread.title || "New Chat"}
+                  </p>
+                )}
+
+                <ChevronDown size={14} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[200px] p-4 break-all overflow-y-auto max-h-[200px]">
+              {currentThread.title || "New Chat"}
+            </TooltipContent>
+          </Tooltip>
         </div>
-    );
+      </ThreadDropdown>
+    </div>
+  );
 }
