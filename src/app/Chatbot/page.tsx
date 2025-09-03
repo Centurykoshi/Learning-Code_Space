@@ -2,8 +2,19 @@
 import LightRays from "@/ChatbotComponents/LightRayComponent";
 import Particles from "@/ChatbotComponents/Particles";
 import ChatbotForm from "@/ChatbotComponents/ChatbotPage";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-export default function chatbot() {
+export default async function chatbot() {
+
+  const session = await auth.api.getSession({
+    headers : await headers(), 
+  }); 
+
+  if(!session?.user){ 
+    return redirect("/sign-in")
+  }
 
   return (
     <div className="min-h-screen min-w-screen relative overflow-hidden">
@@ -19,7 +30,7 @@ export default function chatbot() {
         />
       </div>
       <div className="fixed inset-0 flex justify-center items-center mb-20 left-20 p-4">
-        <div className="w-full max-w-4xl h-full max-h-[95vh]">
+        <div className="w-full max-w-4xl h-full max-h-[75vh]">
           <ChatbotForm />
         </div>
       </div>
