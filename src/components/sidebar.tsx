@@ -55,22 +55,22 @@ export default async function Sidebar() {
                 </div>
 
                 <div className="flex flex-col w-full h-[60vh] items-center justify-center  gap-4">
-                    <div className="flex justify-center place-items-center-safe h-10 w-10">
+                    <div className="flex justify-center items-center-safe h-10 w-10">
                         <Link href="/Chatbot">
-                        <MessageCircle className="transition-all scale:100 duration-300 text-primary transform hover:rotate-360 cursor-pointer hover:scale-125" />
+                        <MessageCircle className="transition-all  duration-300 text-primary transform hover:rotate-360 cursor-pointer " />
                         </Link>
                     </div>
                     <div className="flex justify-center place-items-center-safe h-10 w-10">
-                        <Gamepad className="transition-all scale:100 duration-300 text-primary transform hover:rotate-360 cursor-pointer hover:scale-125" />
+                        <Gamepad className="transition-all  duration-300 text-primary transform hover:rotate-360 cursor-pointer hover:scale-125" />
 
                     </div>
 
                     <div className="flex justify-center place-items-center-safe  h-10 w-10">
-                        <Book className="transition-all scale:100 duration-300 text-primary transform hover:rotate-360 cursor-pointer hover:scale-125" />
+                        <Book className="transition-all  duration-300 text-primary transform hover:rotate-360 cursor-pointer hover:scale-125" />
 
                     </div>
                     <div className="flex justify-center place-items-center-safe h-10 w-10">
-                        <User className="transition-all scale:100 duration-300 text-primary transform hover:rotate-360 cursor-pointer hover:scale-125" />
+                        <User className="transition-all  duration-300 text-primary transform hover:rotate-360 cursor-pointer " />
 
                     </div>
 

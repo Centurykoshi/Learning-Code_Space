@@ -10,10 +10,13 @@ export default function ChatbotLayout({ children }: { children: React.ReactNode 
     <SidebarProvider>
       <div className="flex min-h-screen">
         {/* Sidebar - Hidden on mobile, visible on md+ */}
-        <div className="hidden md:block z-20">
-          <ChatSidebar />
+        <div className=" z-20">
+            <Sidebar />
+          
         </div>
-        
+          <div className="fixed left-20">
+          <ChatSidebar />
+          </div>
         <div className="flex-1 flex flex-col">
           {/* Header with toggle button */}
           <AppHeader />
