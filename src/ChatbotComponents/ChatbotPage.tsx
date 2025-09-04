@@ -20,7 +20,7 @@ const ConversationIdDisplay = ({ conversationId }: { conversationId?: string }) 
         <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="px-6 py-2 border-b border-border/20 bg-muted/20"
+            className="px-6 py-2 "
         >
             <div className="flex items-center justify-between">
                 <div className="text-xs text-muted-foreground">
@@ -40,7 +40,7 @@ const ConversationIdDisplay = ({ conversationId }: { conversationId?: string }) 
                         </span>
                     )}
                 </div>
-                <div className="text-xs text-green-500">
+                <div className="text-xs text-secondary-foreground">
                     ● {conversationId ? 'Active' : 'Ready'}
                 </div>
             </div>
@@ -80,7 +80,7 @@ export default function ChatbotForm({ chat, conversationId }: ChatbotFormProps) 
     const displayConversationId = currentConversationId || conversationId;
 
     return (
-        <div className="w-full h-full flex flex-col rounded-lg">
+        <div className="h-full flex flex-col rounded-lg">
             {/* Conversation ID Display */}
             <ConversationIdDisplay conversationId={displayConversationId} />
 
