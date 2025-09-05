@@ -1,130 +1,214 @@
 "use client";
 
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
-import { BookDashed, Home, MessageCircle, Plus, Trash2 } from "lucide-react";
-import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { trpc } from "@/trpc/client";
-import { useSession } from "@/hooks/useSession"; // You'll need to create this hook
 import { Button } from "@/components/ui/button";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { authClient } from "@/lib/auth-client";
+import { useTRPC } from "@/trpc/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { BookDashed, ChevronDown, Home, MessageCircle, PenIcon, Trash2, Plus } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 const items = [
-    { title: "Create New Chat", url: "/Chatbot", icon: Plus },
     { title: "Home", url: "/", icon: Home },
     { title: "About", url: "/About", icon: BookDashed },
 ];
 
 export function ChatSidebar() {
-    const { data: session } = useSession(); // Get session client-side
+    const trpc = useTRPC();
+    const queryClient = useQueryClient();
+    const session = authClient.useSession();
     const router = useRouter();
+    const [isConversationsOpen, setIsConversationsOpen] = useState(true);
 
-    // Fetch user conversations
-    const { data: conversations, isLoading } = trpc.chatbot.getUserConversations.useQuery(
-        undefined,
-        {
-            enabled: !!session?.user, // Only fetch when user is authenticated
-        }
-    );
+    const { data: conversations = [], isLoading, error } = useQuery(
+        trpc.chatbot.getUserConversations.queryOptions());
+       
+   
 
-    const deleteConversation = trpc.chatbot.deleteConversation.useMutation({
+    const deleteConversation = useMutation(trpc.chatbot.deleteConversation.mutationOptions({
         onSuccess: () => {
-            // Refetch conversations after deletion
-            trpc.useContext().chatbot.getUserConversations.invalidate();
+            queryClient.invalidateQueries({
+                queryKey: [["chatbot", "getUserConversations"]]
+            });
         }
-    });
+    }));
 
     const handleDeleteConversation = (conversationId: string, e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        deleteConversation.mutate({ conversationId });
+        if (confirm("Are you sure you want to delete this conversation?")) {
+            deleteConversation.mutate({ conversationId });
+        }
     };
 
+    const handleNewChat = () => {
+        router.push("/Chatbot");
+    };
+
+    // Debug logging
+    console.log('Conversations data:', conversations);
+    console.log('Is conversations an array?', Array.isArray(conversations));
+    console.log('Conversations length:', conversations?.length);
+
+    if (error) {
+        console.error('Query error:', error);
+    }
+
+    if (session.isPending) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        );
+    }
+
     return (
-        <div className="">
-            <Sidebar collapsible="offcanvas" className="border-r bg-transparent">
-                <SidebarHeader>
-                    <SidebarMenu>
-                        <SidebarMenuItem className="flex items-center gap-0.5">
-                            <SidebarMenuButton asChild>
-                                <Link href="/Chatbot" className="flex items-center gap-2">
-                                    <MessageCircle className="h-4 w-4" />
-                                    <span className="font-medium">Chatbot</span>
-                                </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    </SidebarMenu>
-                </SidebarHeader>
+        <Sidebar className="border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <SidebarHeader className="border-b px-6 py-4">
+                <div className="flex items-center justify-between">
+                    <Link
+                        href="/Chatbot"
+                        onClick={handleNewChat}
+                        className="flex items-center gap-2 font-semibold text-lg hover:text-primary transition-colors"
+                    >
+                        <PenIcon className="w-5 h-5" />
+                        <span>getOkay</span>
+                    </Link>
+                    <Button
+                        onClick={handleNewChat}
+                        size="sm"
+                        className="bg-primary hover:bg-primary/90"
+                    >
+                        <Plus className="w-4 h-4 mr-1" />
+                        New
+                    </Button>
+                </div>
+            </SidebarHeader>
 
-                <SidebarContent className="mt-2 overflow-hidden relative">
-                    <div className="flex flex-col overflow-y-auto p-4">
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Hello There {session?.user?.name || session?.user?.id || "guest"}
-                        </p>
-
-                        {/* Navigation Items */}
-                        <SidebarMenu>
+            <SidebarContent className="px-4 py-4 space-y-4">
+                {/* Navigation Section */}
+                <SidebarGroup>
+                    <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-2 mb-2">
+                        Navigation
+                    </SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu className="space-y-1">
                             {items.map((item) => (
                                 <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton asChild>
-                                        <Link href={item.url} className="flex items-center gap-2">
-                                            <item.icon className="h-4 w-4" />
-                                            <span>{item.title}</span>
+                                    <SidebarMenuButton asChild className="w-full rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors">
+                                        <Link href={item.url} className="flex items-center gap-3 px-3 py-2">
+                                            <item.icon className="w-4 h-4" />
+                                            <span className="font-medium">{item.title}</span>
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                             ))}
                         </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
 
-                        {/* Conversations Section */}
-                        <div className="mt-6">
-                            <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                                Recent Conversations
-                            </h3>
-                            
-                            {isLoading ? (
-                                <div className="space-y-2">
-                                    {[...Array(3)].map((_, i) => (
-                                        <div key={i} className="h-8 bg-muted rounded animate-pulse" />
-                                    ))}
-                                </div>
-                            ) : conversations && conversations.length > 0 ? (
+                {/* Conversations Section */}
+                <Collapsible open={isConversationsOpen} onOpenChange={setIsConversationsOpen}>
+                    <SidebarGroup>
+                        <SidebarGroupLabel asChild>
+                            <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors group">
+                                Your Conversations
+                                <ChevronDown className="w-4 h-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                            </CollapsibleTrigger>
+                        </SidebarGroupLabel>
+                        <CollapsibleContent className="space-y-1">
+                            <SidebarGroupContent>
                                 <SidebarMenu>
-                                    {conversations.slice(0, 10).map((conversation) => (
-                                        <SidebarMenuItem key={conversation.id}>
-                                            <SidebarMenuButton asChild className="group">
-                                                <Link 
-                                                    href={`/Chatbot?conversationId=${conversation.id}`}
-                                                    className="flex items-center justify-between w-full"
-                                                >
-                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                                                        <MessageCircle className="h-3 w-3 flex-shrink-0" />
-                                                        <span className="truncate text-sm">
-                                                            {conversation.title || `Chat ${conversation.id.slice(0, 8)}`}
-                                                        </span>
-                                                    </div>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
-                                                        onClick={(e) => handleDeleteConversation(conversation.id, e)}
-                                                    >
-                                                        <Trash2 className="h-3 w-3" />
-                                                    </Button>
-                                                </Link>
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
-                                    ))}
+                                    {isLoading ? (
+                                        <div className="space-y-2 px-2">
+                                            {[...Array(3)].map((_, i) => (
+                                                <div
+                                                    key={i}
+                                                    className="h-10 bg-muted/50 rounded-lg animate-pulse"
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : error ? (
+                                        <div className="px-3 py-2 text-sm text-destructive">
+                                            Error loading conversations
+                                        </div>
+                                    ) : conversations && conversations.length > 0 ? (
+                                        <div className="max-h-80 overflow-y-auto space-y-1 pr-2">
+                                            <style jsx global>{`
+                                                .conversation-scroll::-webkit-scrollbar {
+                                                    width: 6px;
+                                                }
+                                                .conversation-scroll::-webkit-scrollbar-track {
+                                                    background: transparent;
+                                                }
+                                                .conversation-scroll::-webkit-scrollbar-thumb {
+                                                    background: hsl(var(--border));
+                                                    border-radius: 3px;
+                                                }
+                                                .conversation-scroll::-webkit-scrollbar-thumb:hover {
+                                                    background: hsl(var(--border)) / 0.8;
+                                                }
+                                            `}</style>
+                                            <div className="conversation-scroll max-h-80 overflow-y-auto space-y-1">
+                                                {conversations.map((conversation: any) => (
+                                                    <SidebarMenuItem key={conversation.id}>
+                                                        <SidebarMenuButton asChild className="group w-full">
+                                                            <Link 
+                                                                href={`/Chatbot/${conversation.id}`}
+                                                                className="flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+                                                            >
+                                                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                                    <div className="flex-shrink-0 w-2 h-2 bg-green-500 rounded-full"></div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="truncate text-sm font-medium">
+                                                                            {conversation.title || `Chat ${conversation.id.slice(0, 8)}`}
+                                                                        </div>
+                                                                        {conversation._count?.messages && (
+                                                                            <div className="text-xs text-muted-foreground">
+                                                                                {conversation._count.messages} messages
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground transition-all"
+                                                                    onClick={(e) => handleDeleteConversation(conversation.id, e)}
+                                                                >
+                                                                    <Trash2 className="h-3 w-3" />
+                                                                </Button>
+                                                            </Link>
+                                                        </SidebarMenuButton>
+                                                    </SidebarMenuItem>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="px-3 py-8 text-center">
+                                            <MessageCircle className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+                                            <div className="text-sm text-muted-foreground mb-3">
+                                                No conversations yet
+                                            </div>
+                                            <Button
+                                                onClick={handleNewChat}
+                                                size="sm"
+                                                variant="outline"
+                                                className="text-xs"
+                                            >
+                                                Start your first chat
+                                            </Button>
+                                        </div>
+                                    )}
                                 </SidebarMenu>
-                            ) : (
-                                <p className="text-xs text-muted-foreground">
-                                    No conversations yet. Start a new chat!
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                </SidebarContent>
-            </Sidebar>
-        </div>
+                            </SidebarGroupContent>
+                        </CollapsibleContent>
+                    </SidebarGroup>
+                </Collapsible>
+            </SidebarContent>
+        </Sidebar>
     );
 }
