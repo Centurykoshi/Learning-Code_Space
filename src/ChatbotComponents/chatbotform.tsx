@@ -48,12 +48,13 @@ export const ChatForm: React.FC<ChatFormProps> = ({
 
     const handleSubmit = async (data: z.infer<typeof formSchema>) => {
         console.log("handleSubmit called with data:", data);
+        form.reset();
         try {
             await onSubmit({
                 value: data.value,
                 conversationId: currentConversationId
             });
-            form.reset();
+            // form.reset();
             onCharCountChange(0);
         } catch (error) {
             console.error("Error in handleSubmit:", error);
