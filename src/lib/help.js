@@ -1,204 +1,130 @@
 "use client";
 
-import { useSidebar } from "ui/sidebar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "ui/tooltip";
-import { Toggle } from "ui/toggle";
-import {
-  AudioWaveformIcon,
-  ChevronDown,
-  MessageCircleDashed,
-  PanelLeft,
-} from "lucide-react";
-import { Button } from "ui/button";
-import { Separator } from "ui/separator";
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { BookDashed, Home, MessageCircle, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import { trpc } from "@/trpc/client";
+import { useSession } from "@/hooks/useSession"; // You'll need to create this hook
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
-import { useEffect, useMemo } from "react";
-import { ThreadDropdown } from "../thread-dropdown";
-import { appStore } from "@/app/store";
-import { usePathname } from "next/navigation";
-import { useShallow } from "zustand/shallow";
-import { getShortcutKeyList, Shortcuts } from "lib/keyboard-shortcuts";
-import { useTranslations } from "next-intl";
-import { TextShimmer } from "ui/text-shimmer";
+const items = [
+    { title: "Create New Chat", url: "/Chatbot", icon: Plus },
+    { title: "Home", url: "/", icon: Home },
+    { title: "About", url: "/About", icon: BookDashed },
+];
 
-export function AppHeader() {
-  const t = useTranslations();
-  const [appStoreMutate] = appStore(useShallow((state) => [state.mutate]));
-  const { toggleSidebar } = useSidebar();
-  const currentPaths = usePathname();
+export function ChatSidebar() {
+    const { data: session } = useSession(); // Get session client-side
+    const router = useRouter();
 
-  const componentByPage = useMemo(() => {
-    if (currentPaths.startsWith("/chat/")) {
-      return <ThreadDropdownComponent />;
-    }
-  }, [currentPaths]);
+    // Fetch user conversations
+    const { data: conversations, isLoading } = trpc.chatbot.getUserConversations.useQuery(
+        undefined,
+        {
+            enabled: !!session?.user, // Only fetch when user is authenticated
+        }
+    );
 
-  return (
-    <header className="sticky top-0 z-50 flex items-center px-3 py-2">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Toggle
-            aria-label="Toggle Sidebar"
-            onClick={toggleSidebar}
-            data-testid="sidebar-toggle"
-          >
-            <PanelLeft />
-          </Toggle>
-        </TooltipTrigger>
-        <TooltipContent align="start" side="bottom">
-          <div className="flex items-center gap-2">
-            {t("KeyboardShortcuts.toggleSidebar")}
-            <div className="text-xs text-muted-foreground flex items-center gap-1">
-              {getShortcutKeyList(Shortcuts.toggleSidebar).map((key) => (
-                <span
-                  key={key}
-                  className="w-5 h-5 flex items-center justify-center bg-muted rounded "
-                >
-                  {key}
-                </span>
-              ))}
-            </div>
-          </div>
-        </TooltipContent>
-      </Tooltip>
+    const deleteConversation = trpc.chatbot.deleteConversation.useMutation({
+        onSuccess: () => {
+            // Refetch conversations after deletion
+            trpc.useContext().chatbot.getUserConversations.invalidate();
+        }
+    });
 
-      {componentByPage}
-      <div className="flex-1" />
+    const handleDeleteConversation = (conversationId: string, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        deleteConversation.mutate({ conversationId });
+    };
 
-      <div className="flex items-center gap-2">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size={"icon"}
-              variant={"ghost"}
-              className="bg-secondary/40"
-              onClick={() => {
-                appStoreMutate((state) => ({
-                  voiceChat: {
-                    ...state.voiceChat,
-                    isOpen: true,
-                    agentId: undefined,
-                  },
-                }));
-              }}
-            >
-              <AudioWaveformIcon className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent align="end" side="bottom">
-            <div className="text-xs flex items-center gap-2">
-              {t("KeyboardShortcuts.toggleVoiceChat")}
-              <div className="text-xs text-muted-foreground flex items-center gap-1">
-                {getShortcutKeyList(Shortcuts.toggleVoiceChat).map((key) => (
-                  <span
-                    className="w-5 h-5 flex items-center justify-center bg-muted rounded "
-                    key={key}
-                  >
-                    {key}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </TooltipContent>
-        </Tooltip>
+    return (
+        <div className="">
+            <Sidebar collapsible="offcanvas" className="border-r bg-transparent">
+                <SidebarHeader>
+                    <SidebarMenu>
+                        <SidebarMenuItem className="flex items-center gap-0.5">
+                            <SidebarMenuButton asChild>
+                                <Link href="/Chatbot" className="flex items-center gap-2">
+                                    <MessageCircle className="h-4 w-4" />
+                                    <span className="font-medium">Chatbot</span>
+                                </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    </SidebarMenu>
+                </SidebarHeader>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size={"icon"}
-              variant={"secondary"}
-              className="bg-secondary/40"
-              onClick={() => {
-                appStoreMutate((state) => ({
-                  temporaryChat: {
-                    ...state.temporaryChat,
-                    isOpen: !state.temporaryChat.isOpen,
-                  },
-                }));
-              }}
-            >
-              <MessageCircleDashed className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent align="end" side="bottom">
-            <div className="text-xs flex items-center gap-2">
-              {t("KeyboardShortcuts.toggleTemporaryChat")}
-              <div className="text-xs text-muted-foreground flex items-center gap-1">
-                {getShortcutKeyList(Shortcuts.toggleTemporaryChat).map(
-                  (key) => (
-                    <span
-                      className="w-5 h-5 flex items-center justify-center bg-muted rounded "
-                      key={key}
-                    >
-                      {key}
-                    </span>
-                  ),
-                )}
-              </div>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </div>
-    </header>
-  );
-}
+                <SidebarContent className="mt-2 overflow-hidden relative">
+                    <div className="flex flex-col overflow-y-auto p-4">
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Hello There {session?.user?.name || session?.user?.id || "guest"}
+                        </p>
 
-function ThreadDropdownComponent() {
-  const [threadList, currentThreadId, generatingTitleThreadIds] = appStore(
-    useShallow((state) => [
-      state.threadList,
-      state.currentThreadId,
-      state.generatingTitleThreadIds,
-    ]),
-  );
-  const currentThread = useMemo(() => {
-    return threadList.find((thread) => thread.id === currentThreadId);
-  }, [threadList, currentThreadId]);
+                        {/* Navigation Items */}
+                        <SidebarMenu>
+                            {items.map((item) => (
+                                <SidebarMenuItem key={item.title}>
+                                    <SidebarMenuButton asChild>
+                                        <Link href={item.url} className="flex items-center gap-2">
+                                            <item.icon className="h-4 w-4" />
+                                            <span>{item.title}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ))}
+                        </SidebarMenu>
 
-  useEffect(() => {
-    if (currentThread?.id) {
-      document.title = currentThread.title || "New Chat";
-    }
-  }, [currentThread?.id]);
-
-  if (!currentThread) return null;
-
-  return (
-    <div className="items-center gap-1 hidden md:flex">
-      <div className="w-1 h-4">
-        <Separator orientation="vertical" />
-      </div>
-
-      <ThreadDropdown
-        threadId={currentThread.id}
-        beforeTitle={currentThread.title}
-      >
-        <div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                className="data-[state=open]:bg-input! hover:text-foreground cursor-pointer flex gap-1 items-center px-2 py-1 rounded-md hover:bg-accent"
-              >
-                {generatingTitleThreadIds.includes(currentThread.id) ? (
-                  <TextShimmer className="truncate max-w-60 min-w-0 mr-1">
-                    {currentThread.title || "New Chat"}
-                  </TextShimmer>
-                ) : (
-                  <p className="truncate max-w-60 min-w-0 mr-1">
-                    {currentThread.title || "New Chat"}
-                  </p>
-                )}
-
-                <ChevronDown size={14} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-[200px] p-4 break-all overflow-y-auto max-h-[200px]">
-              {currentThread.title || "New Chat"}
-            </TooltipContent>
-          </Tooltip>
+                        {/* Conversations Section */}
+                        <div className="mt-6">
+                            <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                                Recent Conversations
+                            </h3>
+                            
+                            {isLoading ? (
+                                <div className="space-y-2">
+                                    {[...Array(3)].map((_, i) => (
+                                        <div key={i} className="h-8 bg-muted rounded animate-pulse" />
+                                    ))}
+                                </div>
+                            ) : conversations && conversations.length > 0 ? (
+                                <SidebarMenu>
+                                    {conversations.slice(0, 10).map((conversation) => (
+                                        <SidebarMenuItem key={conversation.id}>
+                                            <SidebarMenuButton asChild className="group">
+                                                <Link 
+                                                    href={`/Chatbot?conversationId=${conversation.id}`}
+                                                    className="flex items-center justify-between w-full"
+                                                >
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        <MessageCircle className="h-3 w-3 flex-shrink-0" />
+                                                        <span className="truncate text-sm">
+                                                            {conversation.title || `Chat ${conversation.id.slice(0, 8)}`}
+                                                        </span>
+                                                    </div>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
+                                                        onClick={(e) => handleDeleteConversation(conversation.id, e)}
+                                                    >
+                                                        <Trash2 className="h-3 w-3" />
+                                                    </Button>
+                                                </Link>
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    ))}
+                                </SidebarMenu>
+                            ) : (
+                                <p className="text-xs text-muted-foreground">
+                                    No conversations yet. Start a new chat!
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </SidebarContent>
+            </Sidebar>
         </div>
-      </ThreadDropdown>
-    </div>
-  );
+    );
 }
