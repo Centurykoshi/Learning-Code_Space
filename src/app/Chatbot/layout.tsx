@@ -22,14 +22,14 @@ export default function ChatbotLayout({ children }: { children: React.ReactNode 
             <ChatSidebar />
 
             {/* Main content area */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 mb-3 ml-2 flex flex-col">
               <AppHeader />
 
               {/* Background elements */}
-              <div className="absolute opacity-100 pointer-events-none top-0 left-0 w-full h-full -z-10 fade-in animate-in duration-5000">
+              <div className="absolute opacity-100 pointer-events-none top-0 left-0 w-full h-full -z-10 fade-in animate-in duration-5000 overflow-hidden">
                 <LightRays className="bg-transparent" />
               </div>
-              <div className="absolute pointer-events-none top-0 left-0 w-full h-full -z-10 fade-in animate-in duration-5000">
+              <div className="absolute pointer-events-none top-0 left-0 w-full h-full -z-10 fade-in animate-in duration-5000 overflow-hidden">
                 <Particles
                   className="bg-transparent"
                   particleCount={400}
