@@ -66,7 +66,9 @@ export default async function Sidebar() {
                     </div>
 
                     <div className="flex justify-center place-items-center-safe  h-10 w-10">
+                        <Link href={"/Peace"}>
                         <Book className="transition-all  duration-300 text-primary transform hover:rotate-360 cursor-pointer hover:scale-125" />
+                        </Link>
 
                     </div>
                     <div className="flex justify-center place-items-center-safe h-10 w-10">

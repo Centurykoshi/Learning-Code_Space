@@ -1,0 +1,177 @@
+import { useRef, useState } from "react";
+
+export default function CanvasforCalendar() {
+
+    type Mood = 'great' | 'good' | 'okay' | 'bad' | 'horrible';
+
+
+    const [isdrawing, setisdrawing] = useState(false);
+    const [mooddata, setMoodData] = useState<Record<string, { mood: Mood; colors: string[] }>>({});
+    const [usedColor, setUsedColor] = useState<Set<string>>(new Set());
+    const [currentColor, setCurrentcolor] = useState("#ff6b6b");
+    const [brushSize, setBrushSize] = useState(5);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [options, setoptions] = useState(false);
+    const [showCanvas, setShowCanvas] = useState(false);
+
+    const undoStack: string[] = [];
+    const redoStack: string[] = [];
+
+
+    const brushSizes = [2, 4, 8, 12, 16, 20];
+
+    const colors = [
+        { color: '#ff6b6b', name: 'Red', mood: 'horrible' },    // Anger, intense negative
+        { color: '#4ecdc4', name: 'Teal', mood: 'good' },       // Calm, peaceful
+        { color: '#45b7d1', name: 'Blue', mood: 'bad' },        // Sadness, low energy
+        { color: '#96ceb4', name: 'Green', mood: 'okay' },      // Neutral, balanced
+        { color: '#feca57', name: 'Yellow', mood: 'great' },    // Joy, excitement
+    ];
+
+    const moodColors = {
+        great: 'bg-emerald-500',
+        good: 'bg-green-400',
+        okay: 'bg-yellow-400',
+        bad: 'bg-orange-400',
+        horrible: 'bg-red-500',
+    };
+
+
+    const startdrawingSession = () => {
+        setoptions(false);
+        setShowCanvas(true);
+        setTimeout(() => {
+            const canvas = canvasRef.current;
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+
+        }, 100);
+
+    };
+
+    const startdrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        if (usedColor.size >= 1 && !usedColor.has(currentColor)) {
+            return; // Can't use more than 2 colors
+        }
+
+        setisdrawing(true);
+        setUsedColor(prev => new Set([...prev, currentColor]));
+
+
+
+        const canvas = canvasRef.current;
+        if (canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            }
+        }
+
+    };
+
+    const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        if (!isdrawing) return;
+        const canvas = canvasRef.current;
+        if (canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+                ctx.lineTo(x, y);
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = brushSize;
+                ctx.lineCap = "round";
+                ctx.stroke();
+            }
+        }
+    }
+
+    const savestate = () => {
+        const canvas = canvasRef.current;
+        if (canvas) {
+            undoStack.push(canvas.toDataURL());
+            redoStack.length = 0;
+        }
+    }
+
+    const restoreState = (state: string) => {
+        const canvas = canvasRef.current;
+        if (canvas) {
+            const ctx = canvas.getContext("2d");
+            const img = new Image();
+            img.src = state;
+            img.onload = () => {
+                ctx?.clearRect(0, 0, canvas.width, canvas.height);
+                ctx?.drawImage(img, 0, 0);
+            }
+        }
+    };
+
+    const handleundo = () => {
+        if (undoStack.length > 0) {
+            const lastsate = undoStack.pop()!;
+            redoStack.push(lastsate);
+            const previous = undoStack[undoStack.length - 1];
+            if (previous) restoreState(previous);
+        }
+    }
+
+    const handleRedo = () => {
+        if (redoStack.length > 0) {
+            const state = redoStack.pop()!;
+            undoStack.push(state);
+            restoreState(state);
+        }
+    }
+
+    const stopdrawing = () => {
+        setisdrawing(false);
+    }
+
+    const clearCanvas = () => {
+        const canvas = canvasRef.current;
+        if (canvas) {
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+        setUsedColor(new Set());
+    }
+
+    const analyzeMoodcolors = (colorset : Set<string>) : Mood => { 
+        const colorArray = Array.from(colorset); 
+        const colorMoods = colorArray.map(color => 
+            colors.find(c => c.color === color)?.mood  || "okay"
+        ); 
+
+        const moodCounts = { 
+            great : colorMoods.filter(mood => mood === "great").length, 
+            good : colorMoods.filter(mood => mood ==="good").length, 
+            okay : colorMoods.filter(mood=> mood ==="okay").length, 
+            bad : colorMoods.filter(mood => mood ==="bad").length, 
+            horrible : colorMoods.filter(mood => mood ==="horrible").length, 
+        }; 
+
+        
+
+        
+
+    }
+
+
+
+}
