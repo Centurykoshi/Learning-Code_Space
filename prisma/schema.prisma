@@ -59,6 +59,7 @@ model User {
   sessions             Session[]
   posts                Post[]
   chatbotConversations ChatbotConversation[]
+  Mood                 Mood[]
 
   @@map("users")
 }
@@ -155,6 +156,20 @@ model Question {
   @@map("questions")
 }
 
+model Mood {
+  id        String   @id @default(uuid())
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  date      String
+  mood      String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([date, userId])
+  @@index([userId])
+  @@index([date])
+}
+
 model ChatbotConversation {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
@@ -183,8 +198,8 @@ model ChatbotMessage {
   sender      MessageSender
   messageType MessageType   @default(TEXT)
 
-  tokenCount Int? 
-  importance Float? 
+  tokenCount Int?
+  importance Float?
 
   conversationId String
   conversation   ChatbotConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)

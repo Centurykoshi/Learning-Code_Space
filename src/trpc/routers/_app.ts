@@ -3,11 +3,13 @@ import { baseProcedure, createTRPCRouter } from '../init';
 import { formvalidator } from '@/modules/form/server/age_gender';
 import { ResponseRouter } from '@/modules/ChatbotRespone/server/ChatbotRespone';
 import { chatbotRouter } from '@/trpc/routers/chatbot';
+import { MoodTrackerRouter } from '@/modules/MoodRespone/server/MoodRespone';
 
 export const appRouter = createTRPCRouter({
     age_gender: formvalidator,
     ResponseRouter: ResponseRouter,
-    chatbot: chatbotRouter
+    chatbot: chatbotRouter, 
+    moodRespone : MoodTrackerRouter
 
 });
 
