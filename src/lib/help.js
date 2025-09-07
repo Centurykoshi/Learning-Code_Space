@@ -2,52 +2,42 @@
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { PopoverTrigger, Popover, PopoverContent } from "@/components/ui/popover";
-import { useTRPC } from "@/trpc/client";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { PopoverTrigger, Popover } from "@/components/ui/popover";
+import { PopoverContent } from "@radix-ui/react-popover";
+import { ComponentProps, useRef, useState } from "react";
+import { trpc } from "@/trpc/client"; // Adjust import path as needed
+import { toast } from "sonner"; // Or your preferred toast library
 
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-
-type Mood = keyof typeof moods;
-
-const moods = {
-    happy: "bg-yellow-400 text-black",
-    sad: "bg-blue-500 text-white",
-    angry: "bg-red-500 text-white",
-    relaxed: "bg-green-500 text-white",
-    anxious: "bg-purple-500 text-white",
-} as const;
-
-export default function CalendarWork() {
+export default function CalenderWork() {
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [open, setOpen] = useState(false);
-    const [mood, setMood] = useState<{ [key: string]: Mood }>({});
+    const [options, setoptions] = useState(false);
+    const [usedColor, setUsedColor] = useState<Set<string>>(new Set());
 
-    const trpc = useTRPC();
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    const saveMoodMutation = useMutation(trpc.moodRespone.SaveMood.mutationOptions({
+    // Updated to match your backend schema
+    type Mood = keyof typeof moods;
+
+    const moods = {
+        good: "bg-green-400 text-black",
+        bad: "bg-red-400 text-white", 
+        great: "bg-green-600 text-white",
+        okay: "bg-yellow-400 text-black",
+        horrible: "bg-red-700 text-white",
+    } as const;
+
+    // tRPC hooks
+    const saveMoodMutation = trpc.MoodTrackerRouter.SaveMood.useMutation({
         onSuccess: () => {
-            toast.success("Mood saved to the database");
+            toast.success("Mood saved successfully!");
         },
-        onError: () => {
-            toast.error("Failed to save mood");
+        onError: (error) => {
+            toast.error(error.message);
         }
-    }));
+    });
 
-    const { data: allMoods, isLoading, error } = useQuery(trpc.moodRespone.getAllMood.queryOptions());
-
-    // Load existing moods when data is available
-    useEffect(() => {
-        if (allMoods) {
-            const moodMap: { [key: string]: Mood } = {};
-            allMoods.forEach((moodEntry: any) => {
-                // The backend returns date as string in YYYY-MM-DD format
-                moodMap[moodEntry.date] = moodEntry.mood;
-            });
-            setMood(moodMap);
-        }
-    }, [allMoods]);
+    const { data: allMoods } = trpc.MoodTrackerRouter.getAll.useQuery();
 
     // Helper function to format date consistently
     const formatDateKey = (date: Date): string => {
@@ -60,64 +50,43 @@ export default function CalendarWork() {
     // Helper function to parse date key back to Date object
     const parseDateKey = (dateKey: string): Date => {
         const [year, month, day] = dateKey.split('-').map(Number);
-        return new Date(year, month - 1, day);
+        return new Date(year, month - 1, day); // month is 0-indexed
     };
 
-    const handleMoodSelection = async (selectedMood: Mood) => {
+    const handlemoodSelection = async (selectedMood: Mood) => {
         if (!date) return;
 
         const key = formatDateKey(date);
 
-        // Update local state immediately for better UX
-        setMood((prev) => ({
-            ...prev,
-            [key]: selectedMood,
-        }));
-
-        // Save to database
         try {
-            // Option 1: If your backend expects a string
+            // Save to backend - tRPC will auto-refetch the query
             await saveMoodMutation.mutateAsync({
                 date: key,
-                mood: selectedMood as string
+                mood: selectedMood,
             });
 
-            // Option 2: If your backend expects the mood as a different field name
-            // await saveMoodMutation.mutateAsync({
-            //     date: date.toISOString(),
-            //     moodType: selectedMood
-            // });
-
-            // Option 3: If you need to map the mood to a different format
-            // await saveMoodMutation.mutateAsync({
-            //     date: key, // or date.toISOString()
-            //     mood: selectedMood.toUpperCase() // or some other transformation
-            // });
+            setOpen(false);
         } catch (error) {
-            // Revert local state if save fails
-            setMood((prev) => {
-                const newState = { ...prev };
-                delete newState[key];
-                return newState;
-            });
+            console.error("Failed to save mood:", error);
         }
+    }
 
-        setOpen(false);
-    };
-
-    // Build modifiers for calendar styling
     const modifiers: Record<Mood, Date[]> = {
-        happy: [],
-        sad: [],
-        angry: [],
-        relaxed: [],
-        anxious: [],
-    };
+        good: [],
+        bad: [],
+        great: [],
+        okay: [],
+        horrible: [],
+    }
 
-    Object.entries(mood).forEach(([dateString, moodType]) => {
-        const localDate = parseDateKey(dateString);
-        modifiers[moodType].push(localDate);
-    });
+    // Use data directly from tRPC query instead of local state
+    if (allMoods) {
+        allMoods.forEach((moodEntry) => {
+            const moodType = moodEntry.mood as Mood;
+            const localDate = parseDateKey(moodEntry.date);
+            modifiers[moodType].push(localDate);
+        });
+    }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -126,17 +95,15 @@ export default function CalendarWork() {
         const checkDate = new Date(date);
         checkDate.setHours(0, 0, 0, 0);
         return checkDate > today;
-    };
+    }
 
-    const handleDateSelect = (selectedDate: Date | undefined) => {
-        if (selectedDate && !isDateDisabled(selectedDate)) {
-            setDate(selectedDate);
-            setOpen(true);
+    const handledateSelect = (date: Date | undefined) => {
+        if (date && !isDateDisabled(date)) {
+            setDate(date);
+            setoptions(true);
+            setUsedColor(new Set());
         }
-    };
-
-    if (isLoading) return <div>Loading...</div>;
-    if (error) return <div>Error loading moods</div>;
+    }
 
     return (
         <div className="p-6 space-y-4">
@@ -147,7 +114,12 @@ export default function CalendarWork() {
                             <Calendar
                                 mode="single"
                                 selected={date}
-                                onSelect={handleDateSelect}
+                                onSelect={(date) => {
+                                    if (date) {
+                                        setDate(date);
+                                        setOpen(true);
+                                    }
+                                }}
                                 className="rounded-2xl border bg-transparent shadow-sm"
                                 defaultMonth={date}
                                 captionLayout="dropdown"
@@ -159,19 +131,19 @@ export default function CalendarWork() {
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-2 space-y-2">
                         <p className="text-sm text-muted-foreground">
-                            Select your mood for {date?.toLocaleDateString()}
+                            Select your Mood for {date?.toLocaleDateString()}
                         </p>
                         <div className="flex flex-col gap-2">
                             {(Object.keys(moods) as Mood[]).map((moodOption) => (
                                 <Button
                                     key={moodOption}
-                                    onClick={() => handleMoodSelection(moodOption)}
+                                    onClick={() => handlemoodSelection(moodOption)}
                                     className={`${moods[moodOption]} w-full`}
                                     disabled={saveMoodMutation.isPending}
                                 >
-                                    {saveMoodMutation.isPending
-                                        ? "Saving..."
-                                        : moodOption.charAt(0).toUpperCase() + moodOption.slice(1)
+                                    {saveMoodMutation.isPending ? 
+                                        "Saving..." : 
+                                        moodOption.charAt(0).toUpperCase() + moodOption.slice(1)
                                     }
                                 </Button>
                             ))}
