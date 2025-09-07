@@ -29,13 +29,13 @@ export default function CanvasMoodTracker() {
     { color: '#feca57', name: 'Yellow', mood: 'great' },    // Joy, excitement
   ];
 
-const moodColors = {
-  great: 'border-b-6 rounded-lg border-emerald-500',
-  good: 'border-b-6 rounded-lg border-green-400',
-  okay: 'border-b-6 rounded-lg border-yellow-400',
-  bad: 'border-b-6 rounded-lg border-orange-400',
-  horrible: 'border-b-6 rounded-lg border-red-500',
-};
+  const moodColors = {
+    great: 'border-b-6 rounded-lg border-emerald-500',
+    good: 'border-b-6 rounded-lg border-green-400',
+    okay: 'border-b-6 rounded-lg border-yellow-400',
+    bad: 'border-b-6 rounded-lg border-orange-400',
+    horrible: 'border-b-6 rounded-lg border-red-500',
+  };
 
 
   const today = new Date();

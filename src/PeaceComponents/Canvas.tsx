@@ -1,6 +1,12 @@
+
 import { useRef, useState } from "react";
 
-export default function CanvasforCalendar() {
+interface Canvas {
+    selectedDate: Date;
+    initialBrushSize?: number;
+}
+
+export default function CanvasforCalendar({ selectedDate, initialBrushSize = 5 }: Canvas) {
 
     type Mood = 'great' | 'good' | 'okay' | 'bad' | 'horrible';
 
@@ -9,7 +15,7 @@ export default function CanvasforCalendar() {
     const [mooddata, setMoodData] = useState<Record<string, { mood: Mood; colors: string[] }>>({});
     const [usedColor, setUsedColor] = useState<Set<string>>(new Set());
     const [currentColor, setCurrentcolor] = useState("#ff6b6b");
-    const [brushSize, setBrushSize] = useState(5);
+   const [brushSize, setBrushSize] = useState(initialBrushSize);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [options, setoptions] = useState(false);
     const [showCanvas, setShowCanvas] = useState(false);
@@ -56,7 +62,7 @@ export default function CanvasforCalendar() {
 
     const startdrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (usedColor.size >= 1 && !usedColor.has(currentColor)) {
-            return; // Can't use more than 2 colors
+            return; // Can't use more than 1 colors
         }
 
         setisdrawing(true);
@@ -138,7 +144,12 @@ export default function CanvasforCalendar() {
 
     const stopdrawing = () => {
         setisdrawing(false);
-    }
+        savestate();
+    };
+    const getMoodFromColor = (color: string): Mood => {
+        return colors.find(c => c.color === color)?.mood || 'okay';
+    };
+
 
     const clearCanvas = () => {
         const canvas = canvasRef.current;
@@ -150,27 +161,35 @@ export default function CanvasforCalendar() {
             }
         }
         setUsedColor(new Set());
-    }
+    };
 
-    const analyzeMoodcolors = (colorset : Set<string>) : Mood => { 
-        const colorArray = Array.from(colorset); 
-        const colorMoods = colorArray.map(color => 
-            colors.find(c => c.color === color)?.mood  || "okay"
-        ); 
+    const saveMood = () => {
+        if (selectedDate && usedColor.size > 0) {
+            const datekey = selectedDate.toDateString();
+            const firstColor = Array.from(usedColor)[0];
+            const mood = getMoodFromColor(firstColor);
+            const colorArray = Array.from(usedColor);
 
-        const moodCounts = { 
-            great : colorMoods.filter(mood => mood === "great").length, 
-            good : colorMoods.filter(mood => mood ==="good").length, 
-            okay : colorMoods.filter(mood=> mood ==="okay").length, 
-            bad : colorMoods.filter(mood => mood ==="bad").length, 
-            horrible : colorMoods.filter(mood => mood ==="horrible").length, 
-        }; 
+            setMoodData(prev => ({
+                ...prev,
+                [datekey]: { mood, colors: colorArray }
+            }));
 
-        
+            setShowCanvas(false);
+            setoptions(false);
+            setUsedColor(new Set());
 
-        
+        }
+    }; 
+    
 
-    }
+    return (
+     <>
+        <div>
+            </div>    
+     </>
+    )
+
 
 
 

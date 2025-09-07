@@ -1,139 +1,184 @@
-import React, { useState } from 'react';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { Heart, Frown, Angry, Coffee, Zap } from 'lucide-react';
+"use client";
 
-type Mood = 'happy' | 'sad' | 'angry' | 'relaxed' | 'anxious';
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { PopoverTrigger, Popover, PopoverContent } from "@/components/ui/popover";
+import { useTRPC } from "@/trpc/client";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-export default function CalenderWork() {
-  const [selectedDate, setSelectedDate] = useState<Date>();
-  const [open, setOpen] = useState(false);
-  const [moodData, setMoodData] = useState<Record<string, Mood>>({});
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
-  const moods = {
-    happy: 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200',
-    sad: 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200',
-    angry: 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200',
-    relaxed: 'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200',
-    anxious: 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200',
-  };
+type Mood = keyof typeof moods;
 
-  const moodIcons = {
-    happy: <Heart className="w-4 h-4" />,
-    sad: <Frown className="w-4 h-4" />,
-    angry: <Angry className="w-4 h-4" />,
-    relaxed: <Coffee className="w-4 h-4" />,
-    anxious: <Zap className="w-4 h-4" />,
-  };
+const moods = {
+    happy: "bg-yellow-400 text-black",
+    sad: "bg-blue-500 text-white",
+    angry: "bg-red-500 text-white",
+    relaxed: "bg-green-500 text-white",
+    anxious: "bg-purple-500 text-white",
+} as const;
 
-  const moodColors = {
-    happy: 'bg-emerald-400',
-    sad: 'bg-blue-400',
-    angry: 'bg-red-400',
-    relaxed: 'bg-purple-400',
-    anxious: 'bg-orange-400',
-  };
+export default function CalendarWork() {
+    const [date, setDate] = useState<Date | undefined>(new Date());
+    const [open, setOpen] = useState(false);
+    const [mood, setMood] = useState<{ [key: string]: Mood }>({});
 
-  const handleMoodSelect = (mood: Mood) => {
-    if (selectedDate) {
-      const dateKey = selectedDate.toDateString();
-      setMoodData(prev => ({ ...prev, [dateKey]: mood }));
-      setOpen(false);
-    }
-  };
+    const trpc = useTRPC();
 
-  const modifiers = Object.entries(moodData).reduce((acc, [dateStr, mood]) => {
-    const date = new Date(dateStr);
-    if (!acc[mood]) acc[mood] = [];
-    acc[mood].push(date);
-    return acc;
-  }, {} as Record<Mood, Date[]>);
+    const saveMoodMutation = useMutation(trpc.moodRespone.SaveMood.mutationOptions({
+        onSuccess: () => {
+            toast.success("Mood saved to the database");
+        },
+        onError: () => {
+            toast.error("Failed to save mood");
+        }
+    }));
 
-  const modifiersClassNames = Object.keys(moods).reduce((acc, mood) => {
-    acc[mood as Mood] = `${moodColors[mood as Mood]} text-white font-semibold rounded-full`;
-    return acc;
-  }, {} as Record<Mood, string>);
+    const { data: allMoods, isLoading, error } = useQuery(trpc.moodRespone.getAllMood.queryOptions());
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-6">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold text-gray-800">Mood Tracker</h1>
-            <p className="text-gray-600">Track your daily emotions and discover patterns</p>
-          </div>
+    // Load existing moods when data is available
+    useEffect(() => {
+        if (allMoods) {
+            const moodMap: { [key: string]: Mood } = {};
+            allMoods.forEach((moodEntry: any) => {
+                // The backend returns date as string in YYYY-MM-DD format
+                moodMap[moodEntry.date] = moodEntry.mood;
+            });
+            setMood(moodMap);
+        }
+    }, [allMoods]);
 
-          <div className="bg-gray-50 rounded-xl p-6">
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <div className="cursor-pointer">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={(date) => {
-                      if (date) {
-                        setSelectedDate(date);
-                        setOpen(true);
-                      }
-                    }}
-                    modifiers={modifiers}
-                    modifiersClassNames={modifiersClassNames}
-                    className="rounded-lg border border-gray-200 bg-white shadow-sm mx-auto"
-                  />
-                </div>
-              </PopoverTrigger>
-              <PopoverContent className="w-72 p-4 bg-white border border-gray-200 rounded-xl shadow-lg">
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-700">How are you feeling?</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {selectedDate?.toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </p>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 gap-2">
-                    {(Object.keys(moods) as Mood[]).map((mood) => (
-                      <Button
-                        key={mood}
-                        onClick={() => handleMoodSelect(mood)}
-                        variant="outline"
-                        className={`${moods[mood]} justify-start gap-3 h-12 transition-all duration-200 hover:scale-105`}
-                      >
-                        {moodIcons[mood]}
-                        <span className="capitalize font-medium">{mood}</span>
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
+    // Helper function to format date consistently
+    const formatDateKey = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
 
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Mood Legend</h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {(Object.keys(moods) as Mood[]).map((mood) => (
-                <div key={mood} className="flex items-center gap-2 text-sm">
-                  <div className={`w-4 h-4 rounded-full ${moodColors[mood]}`}></div>
-                  <span className="capitalize text-gray-700 font-medium">{mood}</span>
-                </div>
-              ))}
+    // Helper function to parse date key back to Date object
+    const parseDateKey = (dateKey: string): Date => {
+        const [year, month, day] = dateKey.split('-').map(Number);
+        return new Date(year, month - 1, day);
+    };
+
+    const handleMoodSelection = async (selectedMood: Mood) => {
+        if (!date) return;
+
+        const key = formatDateKey(date);
+
+        // Update local state immediately for better UX
+        setMood((prev) => ({
+            ...prev,
+            [key]: selectedMood,
+        }));
+
+        // Save to database
+        try {
+            // Option 1: If your backend expects a string
+            await saveMoodMutation.mutateAsync({
+                date: key,
+                mood: selectedMood as string
+            });
+
+            // Option 2: If your backend expects the mood as a different field name
+            // await saveMoodMutation.mutateAsync({
+            //     date: date.toISOString(),
+            //     moodType: selectedMood
+            // });
+
+            // Option 3: If you need to map the mood to a different format
+            // await saveMoodMutation.mutateAsync({
+            //     date: key, // or date.toISOString()
+            //     mood: selectedMood.toUpperCase() // or some other transformation
+            // });
+        } catch (error) {
+            // Revert local state if save fails
+            setMood((prev) => {
+                const newState = { ...prev };
+                delete newState[key];
+                return newState;
+            });
+        }
+
+        setOpen(false);
+    };
+
+    // Build modifiers for calendar styling
+    const modifiers: Record<Mood, Date[]> = {
+        happy: [],
+        sad: [],
+        angry: [],
+        relaxed: [],
+        anxious: [],
+    };
+
+    Object.entries(mood).forEach(([dateString, moodType]) => {
+        const localDate = parseDateKey(dateString);
+        modifiers[moodType].push(localDate);
+    });
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const isDateDisabled = (date: Date) => {
+        const checkDate = new Date(date);
+        checkDate.setHours(0, 0, 0, 0);
+        return checkDate > today;
+    };
+
+    const handleDateSelect = (selectedDate: Date | undefined) => {
+        if (selectedDate && !isDateDisabled(selectedDate)) {
+            setDate(selectedDate);
+            setOpen(true);
+        }
+    };
+
+    if (isLoading) return <div>Loading...</div>;
+    if (error) return <div>Error loading moods</div>;
+
+    return (
+        <div className="p-6 space-y-4">
+            <div className="flex flex-col gap-4">
+                <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                        <div>
+                            <Calendar
+                                mode="single"
+                                selected={date}
+                                onSelect={handleDateSelect}
+                                className="rounded-2xl border bg-transparent shadow-sm"
+                                defaultMonth={date}
+                                captionLayout="dropdown"
+                                modifiers={modifiers}
+                                modifiersClassNames={moods}
+                                disabled={isDateDisabled}
+                            />
+                        </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-2 space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                            Select your mood for {date?.toLocaleDateString()}
+                        </p>
+                        <div className="flex flex-col gap-2">
+                            {(Object.keys(moods) as Mood[]).map((moodOption) => (
+                                <Button
+                                    key={moodOption}
+                                    onClick={() => handleMoodSelection(moodOption)}
+                                    className={`${moods[moodOption]} w-full`}
+                                    disabled={saveMoodMutation.isPending}
+                                >
+                                    {saveMoodMutation.isPending
+                                        ? "Saving..."
+                                        : moodOption.charAt(0).toUpperCase() + moodOption.slice(1)
+                                    }
+                                </Button>
+                            ))}
+                        </div>
+                    </PopoverContent>
+                </Popover>
             </div>
-          </div>
-
-          <div className="text-center">
-            <p className="text-xs text-gray-500">
-              Click on any date to log your mood for that day
-            </p>
-          </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
