@@ -1,8 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Palette, RotateCcw, Save, X } from 'lucide-react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useTRPC } from '@/trpc/client';
+import { toast } from 'sonner';
 
 type Mood = 'great' | 'good' | 'okay' | 'bad' | 'horrible';
 
@@ -12,31 +15,50 @@ export default function CanvasMoodTracker() {
   const [showCanvas, setShowCanvas] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [moodData, setMoodData] = useState<Record<string, { mood: Mood; colors: string[] }>>({});
+  const [moodData, setMoodData] = useState<{ [key: string]: Mood }>({});
   const [usedColors, setUsedColors] = useState<Set<string>>(new Set());
   const [currentColor, setCurrentColor] = useState('#ff6b6b');
   const [brushSize, setBrushSize] = useState(5);
+
+  const trpc = useTRPC();
+
+  const Save_Mood_Mutation = useMutation(trpc.moodRespone.SaveMood.mutationOptions({
+    onSuccess: (data) => {
+      console.log('Mutation success:', data); // Debug log
+      toast.success("Mood saved to the database");
+    },
+    onError: (error) => {
+      console.error('Mutation error:', error); // Debug log
+      toast.error(`Failed to save mood: ${error.message || 'Unknown error'}`);
+    }
+  }));
+
+  const { data: allMoods, isLoading, error } = useQuery(trpc.moodRespone.getAllMood.queryOptions());
+
+  // Debug logs for data loading
+  useEffect(() => {
+    console.log('Query state:', { allMoods, isLoading, error });
+  }, [allMoods, isLoading, error]);
 
   // Available brush sizes
   const brushSizes = [2, 5, 8, 12, 16, 20];
 
   // Color palette with mood associations - balanced
   const colors = [
-    { color: '#ff6b6b', name: 'Red', mood: 'horrible' },    // Anger, intense negative
-    { color: '#4ecdc4', name: 'Teal', mood: 'good' },       // Calm, peaceful
-    { color: '#45b7d1', name: 'Blue', mood: 'bad' },        // Sadness, low energy
-    { color: '#96ceb4', name: 'Green', mood: 'okay' },      // Neutral, balanced
-    { color: '#feca57', name: 'Yellow', mood: 'great' },    // Joy, excitement
+    { color: '#ff6b6b', name: 'Red', mood: 'horrible' as Mood },    // Anger, intense negative
+    { color: '#4ecdc4', name: 'Teal', mood: 'good' as Mood },       // Calm, peaceful
+    { color: '#45b7d1', name: 'Blue', mood: 'bad' as Mood },        // Sadness, low energy
+    { color: '#96ceb4', name: 'Green', mood: 'okay' as Mood },      // Neutral, balanced
+    { color: '#feca57', name: 'Yellow', mood: 'great' as Mood },    // Joy, excitement
   ];
 
   const moodColors = {
-    great: 'border-b-6 rounded-lg border-emerald-500',
-    good: 'border-b-6 rounded-lg border-green-400',
-    okay: 'border-b-6 rounded-lg border-yellow-400',
-    bad: 'border-b-6 rounded-lg border-orange-400',
-    horrible: 'border-b-6 rounded-lg border-red-500',
+    great: 'border-b-4 border-emerald-500 bg-emerald-50',
+    good: 'border-b-4 border-green-400 bg-green-50',
+    okay: 'border-b-4 border-yellow-400 bg-yellow-50',
+    bad: 'border-b-4 border-orange-400 bg-orange-50',
+    horrible: 'border-b-4 border-red-500 bg-red-50',
   };
-
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -45,6 +67,29 @@ export default function CanvasMoodTracker() {
     const checkDate = new Date(date);
     checkDate.setHours(0, 0, 0, 0);
     return checkDate > today;
+  };
+
+  const formatDateKey = (date: Date): string => {
+    console.log('formatDateKey input:', date, typeof date);
+
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+      console.error('Invalid date passed to formatDateKey:', date);
+      return '';
+    }
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    const result = `${year}-${month}-${day}`;
+    console.log('formatDateKey result:', result);
+
+    return result;
+  };
+
+  const parseDateKey = (dateKey: string): Date => {
+    const [year, month, day] = dateKey.split('-').map(Number);
+    return new Date(year, month - 1, day);
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -153,30 +198,88 @@ export default function CanvasMoodTracker() {
     return dominantMood || 'okay';
   };
 
-  const saveMood = () => {
+  const saveMood = async () => {
     if (selectedDate && usedColors.size > 0) {
-      const dateKey = selectedDate.toDateString();
+      const dateKey = formatDateKey(selectedDate);
       const mood = analyzeMoodFromColors(usedColors);
-      const colorArray = Array.from(usedColors);
 
+      // Update local state immediately for better UX
       setMoodData(prev => ({
         ...prev,
-        [dateKey]: { mood, colors: colorArray }
+        [dateKey]: mood
       }));
 
-      setShowCanvas(false);
-      setShowOptions(false);
-      setUsedColors(new Set());
+      try {
+        await Save_Mood_Mutation.mutateAsync({
+          date: dateKey,
+          mood: mood
+        });
+
+        setShowCanvas(false);
+        setShowOptions(false);
+        setUsedColors(new Set());
+      } catch (error) {
+        // Revert local state if save failed
+        setMoodData((prev) => {
+          const newState = { ...prev };
+          delete newState[dateKey];
+          return newState;
+        });
+      }
     }
   };
 
-  // Create modifiers for calendar
-  const modifiers = Object.entries(moodData).reduce((acc, [dateStr, data]) => {
-    const date = new Date(dateStr);
-    if (!acc[data.mood]) acc[data.mood] = [];
-    acc[data.mood].push(date);
-    return acc;
-  }, {} as Record<Mood, Date[]>);
+  // const handleMoodSelection = async (selectedMood: Mood) => {
+  //   if (!selectedDate) return;
+
+  //   const key = formatDateKey(selectedDate);
+
+  //   // Update local state immediately for better UX
+  //   setMoodData((prev) => ({
+  //     ...prev,
+  //     [key]: selectedMood,
+  //   }));
+
+  //   try {
+  //     await Save_Mood_Mutation.mutateAsync({
+  //       selectedDate: key,
+  //       mood: selectedMood as string
+  //     });
+  //   } catch (error) {
+  //     // Revert local state if save failed
+  //     setMoodData((prev) => {
+  //       const newState = { ...prev };
+  //       delete newState[key];
+  //       return newState;
+  //     });
+  //   }
+
+  //   setShowOptions(false);
+  // };
+
+  // Create modifiers for calendar - simplified and safe
+  const modifiers = {
+    great: [] as Date[],
+    good: [] as Date[],
+    okay: [] as Date[],
+    bad: [] as Date[],
+    horrible: [] as Date[]
+  };
+
+  // Only process if moodData exists and has entries
+  if (moodData && Object.keys(moodData).length > 0) {
+    Object.keys(moodData).forEach(dateString => {
+      const moodType = moodData[dateString];
+      if (moodType && modifiers[moodType]) {
+        try {
+          const localDate = parseDateKey(dateString);
+          modifiers[moodType].push(localDate);
+        } catch (e) {
+          // Skip invalid dates silently
+        }
+      }
+    });
+  }
 
   const modifiersClassNames = {
     great: `${moodColors.great} text-muted-foreground font-semibold rounded-full `,
@@ -186,12 +289,23 @@ export default function CanvasMoodTracker() {
     horrible: `${moodColors.horrible} text-muted-foreground font-semibold rounded-full `,
   };
 
+  useEffect(() => {
+    if (allMoods && Array.isArray(allMoods)) {
+      const moodMap: { [key: string]: Mood } = {};
+      allMoods.forEach((moodEntry: any) => {
+        if (moodEntry && moodEntry.date && moodEntry.mood) {
+          // The backend returns date as string in YYYY-MM-DD format
+          moodMap[moodEntry.date] = moodEntry.mood;
+        }
+      });
+      setMoodData(moodMap);
+    }
+  }, [allMoods]);
+
   return (
     <div className="max-h-[80vh] bg-transparent border-1 p-6 overflow-auto custom-scrollbar">
       <div className="max-w-4xl mx-auto">
         <div className="bg-transparent rounded-2xl shadow-xl p-8 space-y-6">
-
-
           {!showCanvas && !showOptions ? (
             <div className="space-y-6">
               <div className="bg-transparent rounded-xl p-6">
@@ -205,8 +319,6 @@ export default function CanvasMoodTracker() {
                   className="rounded-lg border bg-transparent shadow-sm mx-auto"
                 />
               </div>
-
-
 
               <div className="bg-transparent rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-muted-foreground mb-4">Color Meanings</h3>
@@ -229,7 +341,6 @@ export default function CanvasMoodTracker() {
           ) : showOptions ? (
             <div className="space-y-6">
               <div className="text-center space-y-4">
-
                 <p className="text-muted-foreground max-w-md mx-auto">
                   How would you like to express your feelings for{' '}
                   <span className="font-semibold text-muted-background">
@@ -291,7 +402,6 @@ export default function CanvasMoodTracker() {
                     </div>
                   </div>
                 </div>
-
               </div>
 
               <div className="flex justify-center">
@@ -408,8 +518,6 @@ export default function CanvasMoodTracker() {
                     onMouseLeave={stopDrawing}
                   />
                 </div>
-
-
               </div>
             </div>
           )}

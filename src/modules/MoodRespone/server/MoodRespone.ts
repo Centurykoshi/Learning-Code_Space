@@ -5,7 +5,7 @@ import { TRPCError } from "@trpc/server";
 
 import z from "zod";
 
-const MoodSchema = z.enum(["happy", "sad", "angry", "relaxed", "anxious"])
+const MoodSchema = z.enum(["great", "good", "okay", "bad", "horrible"])
 export const MoodTrackerRouter = createTRPCRouter({
 
     SaveMood: baseProcedure

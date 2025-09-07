@@ -147,7 +147,8 @@ export default function CanvasforCalendar({ selectedDate, initialBrushSize = 5 }
         savestate();
     };
     const getMoodFromColor = (color: string): Mood => {
-        return colors.find(c => c.color === color)?.mood || 'okay';
+        let color_value =  colors.find(c => c.color === color)?.mood || 'okay';
+        return color_value; 
     };
 
 
@@ -181,6 +182,23 @@ export default function CanvasforCalendar({ selectedDate, initialBrushSize = 5 }
 
         }
     }; 
+
+  // Create modifiers for calendar
+  const modifiers = Object.entries(mooddata).reduce((acc, [dateStr, data]) => {
+    const date = new Date(dateStr);
+    if (!acc[data.mood]) acc[data.mood] = [];
+    acc[data.mood].push(date);
+    return acc;
+  }, {} as Record<Mood, Date[]>);
+
+   const modifiersClassNames = {
+    great: `${moodColors.great} text-muted-foreground font-semibold rounded-full `,
+    good: `${moodColors.good} text-muted-foreground font-semibold rounded-full`,
+    okay: `${moodColors.okay} text-muted-foreground font-semibold rounded-full `,
+    bad: `${moodColors.bad} text-muted-foreground font-semibold rounded-full`,
+    horrible: `${moodColors.horrible} text-muted-foreground font-semibold rounded-full `,
+  };
+
     
 
     return (
