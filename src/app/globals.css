@@ -25,6 +25,24 @@
   scrollbar-color: rgba(146, 90, 56, 0.308) transparent;
 }
 
+/* Override react-day-picker selected date styles */
+.rdp-day_selected {
+  background-color: transparent !important;
+  border: 2px solid hsl(var(--primary)) !important;
+  color: inherit !important;
+}
+
+.rdp-day_selected:hover {
+  background-color: transparent !important;
+  border: 2px solid hsl(var(--primary)) !important;
+}
+
+.rdp-day_selected:focus {
+  background-color: transparent !important;
+  border: 2px solid hsl(var(--primary)) !important;
+  outline: none;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {

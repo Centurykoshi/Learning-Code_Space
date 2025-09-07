@@ -2,7 +2,8 @@
 
 import CalenderWork from "./Calender";
 import CanvasforCalendar from "./Canvas";
-import CanvasMoodTracker from "./DrawingCanvas";
+// import CanvasMoodTracker from "./DrawingCanvas";
+import MoodTracker from "./MoodTracker";
 
 
 export default function Background() {
@@ -11,7 +12,8 @@ export default function Background() {
             <div className="max-w-[800px] max-h-[90vh]  border-2 flex justify-center items-center m-auto p-10 rounded-2xl bg-primary-foreground/10 backdrop-blur-lg shadow-lg ">
 
               {/* <CalenderWork /> */}
-              <CanvasMoodTracker />
+              {/* <CanvasMoodTracker /> */}
+              <MoodTracker />
               
             </div>
 
