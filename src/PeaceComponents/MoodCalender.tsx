@@ -1,7 +1,9 @@
 import React from 'react';
 import { Calendar } from '@/components/ui/calendar';
+import z from 'zod';
 
-type Mood = 'great' | 'good' | 'okay' | 'bad' | 'horrible';
+const Mood = z.enum(["great", "good", "okay", "bad", "horrible"]);
+type Mood = z.infer<typeof Mood>;
 
 interface ColorData {
     color: string;
@@ -107,7 +109,8 @@ export default function MoodCalendar({
                         modifiersClassNames={modifiersClassNames}
                         disabled={isDateDisabled}
                         className="rounded-lg border bg-transparent shadow-sm mx-auto"
-                        key={`calendar-${Object.keys(moodData).length}`} // Force re-render with styles
+                        key={`calendar-${Object.keys(moodData).length}`}
+                         // Force re-render with styles
                     />
                 </div>
             </div>
