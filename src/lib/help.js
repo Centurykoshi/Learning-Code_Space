@@ -1,92 +1,38 @@
-"use client";
+import React from 'react';
+import z from 'zod';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Calendar } from '@/components/ui/calendar';
 
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { PopoverTrigger, Popover } from "@/components/ui/popover";
-import { PopoverContent } from "@radix-ui/react-popover";
-import { ComponentProps, useRef, useState } from "react";
-import { trpc } from "@/trpc/client"; // Adjust import path as needed
-import { toast } from "sonner"; // Or your preferred toast library
+const Mood = z.enum(["great", "good", "okay", "bad", "horrible"]);
+type Mood = z.infer<typeof Mood>;
 
-export default function CalenderWork() {
-    const [date, setDate] = useState<Date | undefined>(new Date());
-    const [open, setOpen] = useState(false);
-    const [options, setoptions] = useState(false);
-    const [usedColor, setUsedColor] = useState<Set<string>>(new Set());
+interface ColorData {
+    color: string;
+    name: string;
+    mood: Mood;
+}
 
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+interface MoodCalendarProps {
+    selectedDate?: Date;
+    onDateSelect: (date: Date | undefined) => void;
+    moodData: { [key: string]: Mood };
+    colors: ColorData[];
+}
 
-    // Updated to match your backend schema
-    type Mood = keyof typeof moods;
+export default function MoodCalendar({
+    selectedDate,
+    onDateSelect,
+    moodData,
+    colors
+}: MoodCalendarProps) {
 
-    const moods = {
-        good: "bg-green-400 text-black",
-        bad: "bg-red-400 text-white", 
-        great: "bg-green-600 text-white",
-        okay: "bg-yellow-400 text-black",
-        horrible: "bg-red-700 text-white",
-    } as const;
-
-    // tRPC hooks
-    const saveMoodMutation = trpc.MoodTrackerRouter.SaveMood.useMutation({
-        onSuccess: () => {
-            toast.success("Mood saved successfully!");
-        },
-        onError: (error) => {
-            toast.error(error.message);
-        }
-    });
-
-    const { data: allMoods } = trpc.MoodTrackerRouter.getAll.useQuery();
-
-    // Helper function to format date consistently
-    const formatDateKey = (date: Date): string => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+    const moodColors = {
+        great: 'border-b-4 border-yellow-500',
+        good: 'border-b-4 border-purple-400',
+        okay: 'border-b-4 border-green-300',
+        bad: 'border-b-4 border-blue-400',
+        horrible: 'border-b-4 border-red-400',
     };
-
-    // Helper function to parse date key back to Date object
-    const parseDateKey = (dateKey: string): Date => {
-        const [year, month, day] = dateKey.split('-').map(Number);
-        return new Date(year, month - 1, day); // month is 0-indexed
-    };
-
-    const handlemoodSelection = async (selectedMood: Mood) => {
-        if (!date) return;
-
-        const key = formatDateKey(date);
-
-        try {
-            // Save to backend - tRPC will auto-refetch the query
-            await saveMoodMutation.mutateAsync({
-                date: key,
-                mood: selectedMood,
-            });
-
-            setOpen(false);
-        } catch (error) {
-            console.error("Failed to save mood:", error);
-        }
-    }
-
-    const modifiers: Record<Mood, Date[]> = {
-        good: [],
-        bad: [],
-        great: [],
-        okay: [],
-        horrible: [],
-    }
-
-    // Use data directly from tRPC query instead of local state
-    if (allMoods) {
-        allMoods.forEach((moodEntry) => {
-            const moodType = moodEntry.mood as Mood;
-            const localDate = parseDateKey(moodEntry.date);
-            modifiers[moodType].push(localDate);
-        });
-    }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -95,61 +41,117 @@ export default function CalenderWork() {
         const checkDate = new Date(date);
         checkDate.setHours(0, 0, 0, 0);
         return checkDate > today;
-    }
+    };
 
-    const handledateSelect = (date: Date | undefined) => {
-        if (date && !isDateDisabled(date)) {
-            setDate(date);
-            setoptions(true);
-            setUsedColor(new Set());
+    const parseDateKey = (dateKey: string): Date => {
+        const [year, month, day] = dateKey.split('-').map(Number);
+        return new Date(year, month - 1, day);
+    };
+
+    // Prepare modifiers
+    const modifiers = {
+        great: [] as Date[],
+        good: [] as Date[],
+        okay: [] as Date[],
+        bad: [] as Date[],
+        horrible: [] as Date[]
+    };
+
+    Object.keys(moodData).forEach(dateString => {
+        const moodType = moodData[dateString];
+        if (moodType && modifiers[moodType]) {
+            try {
+                const localDate = parseDateKey(dateString);
+                modifiers[moodType].push(localDate);
+            } catch (e) { }
         }
-    }
+    });
+
+    const modifiersClassNames = {
+        great: `${moodColors.great} text-muted-foreground font-semibold`,
+        good: `${moodColors.good} text-muted-foreground font-semibold`,
+        okay: `${moodColors.okay} text-muted-foreground font-semibold`,
+        bad: `${moodColors.bad} text-muted-foreground font-semibold`,
+        horrible: `${moodColors.horrible} text-muted-foreground font-semibold`,
+    };
+
+    // Format a Date object to YYYY-MM-DD
+    const formatDateKey = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
 
     return (
-        <div className="p-6 space-y-4">
-            <div className="flex flex-col gap-4">
-                <Popover open={open} onOpenChange={setOpen}>
-                    <PopoverTrigger asChild>
-                        <div>
-                            <Calendar
-                                mode="single"
-                                selected={date}
-                                onSelect={(date) => {
-                                    if (date) {
-                                        setDate(date);
-                                        setOpen(true);
-                                    }
-                                }}
-                                className="rounded-2xl border bg-transparent shadow-sm"
-                                defaultMonth={date}
-                                captionLayout="dropdown"
-                                modifiers={modifiers}
-                                modifiersClassNames={moods}
-                                disabled={isDateDisabled}
-                            />
+        <div className="space-y-6">
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                    .calendar-container .rdp-day_selected {
+                        position: relative;
+                        background-color: rgba(59, 130, 246, 0.1) !important;
+                    }
+                    
+                    .calendar-container .rdp-day_selected.border-b-4 {
+                        border-bottom-width: 4px !important;
+                    }
+                    
+                    .calendar-container .rdp-day:hover {
+                        background-color: rgba(59, 130, 246, 0.05) !important;
+                    }
+                `
+            }} />
+
+            <div className="bg-transparent rounded-xl p-6">
+                <div className="calendar-container">
+                    <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={onDateSelect}
+                        modifiers={modifiers}
+                        modifiersClassNames={modifiersClassNames}
+                        disabled={isDateDisabled}
+                        className="rounded-lg border bg-transparent shadow-sm mx-auto"
+                        key={`calendar-${Object.keys(moodData).length}`}
+                        components={{
+                            Day: ({ day, modifiers, ...props }) => {
+                                const dateKey = formatDateKey(day.date);
+                                const mood = moodData[dateKey];
+
+                                return (
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <div {...props}>{day.date.getDate()}</div>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <span>{mood ? `Mood: ${mood}` : 'No mood recorded'}</span>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                );
+                            }
+                        }}
+                    />
+                </div>
+            </div>
+
+            <div className="bg-transparent rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-muted-foreground mb-4">Color Meanings</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                    {colors.map((colorData) => (
+                        <div key={colorData.color} className="flex items-center gap-2 text-sm">
+                            <div
+                                className="w-6 h-6 rounded-full border-2 flex-shrink-0"
+                                style={{ backgroundColor: colorData.color }}
+                            ></div>
+                            <div>
+                                <p className="font-medium">{colorData.name}</p>
+                                <p className="text-xs text-gray-500 capitalize">{colorData.mood}</p>
+                            </div>
                         </div>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-2 space-y-2">
-                        <p className="text-sm text-muted-foreground">
-                            Select your Mood for {date?.toLocaleDateString()}
-                        </p>
-                        <div className="flex flex-col gap-2">
-                            {(Object.keys(moods) as Mood[]).map((moodOption) => (
-                                <Button
-                                    key={moodOption}
-                                    onClick={() => handlemoodSelection(moodOption)}
-                                    className={`${moods[moodOption]} w-full`}
-                                    disabled={saveMoodMutation.isPending}
-                                >
-                                    {saveMoodMutation.isPending ? 
-                                        "Saving..." : 
-                                        moodOption.charAt(0).toUpperCase() + moodOption.slice(1)
-                                    }
-                                </Button>
-                            ))}
-                        </div>
-                    </PopoverContent>
-                </Popover>
+                    ))}
+                </div>
             </div>
         </div>
     );

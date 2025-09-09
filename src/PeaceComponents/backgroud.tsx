@@ -2,7 +2,8 @@
 
 import CalenderWork from "./Calender";
 import CanvasforCalendar from "./Canvas";
-import ZoomI from "./MoodAnalysis";
+import OrderByChat from "./Charts/Orderbychat";
+
 // import CanvasMoodTracker from "./DrawingCanvas";
 import MoodTracker from "./MoodTracker";
 
@@ -18,7 +19,8 @@ export default function Background() {
               <MoodTracker />
               
               </div>
-              <ZoomI width={500} height={600} />
+              {/* <ZoomI width={500} height={600} /> */}
+              <OrderByChat />
               
             </div>
 
