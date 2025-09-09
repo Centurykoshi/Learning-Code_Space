@@ -1,158 +1,74 @@
-import React from 'react';
-import z from 'zod';
-import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { Calendar } from '@/components/ui/calendar';
+"use client";
+
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import z from "zod";
 
 const Mood = z.enum(["great", "good", "okay", "bad", "horrible"]);
 type Mood = z.infer<typeof Mood>;
 
-interface ColorData {
-    color: string;
-    name: string;
-    mood: Mood;
+type OrderbyDayChartProps = {
+    data: {
+        date: string // Should be YYYY-MM-DD format
+        mood: Mood
+    }[]
 }
 
-interface MoodCalendarProps {
-    selectedDate?: Date;
-    onDateSelect: (date: Date | undefined) => void;
-    moodData: { [key: string]: Mood };
-    colors: ColorData[];
-}
-
-export default function MoodCalendar({
-    selectedDate,
-    onDateSelect,
-    moodData,
-    colors
-}: MoodCalendarProps) {
-
-    const moodColors = {
-        great: 'border-b-4 border-yellow-500',
-        good: 'border-b-4 border-purple-400',
-        okay: 'border-b-4 border-green-300',
-        bad: 'border-b-4 border-blue-400',
-        horrible: 'border-b-4 border-red-400',
+export default function OrderByChat({data}: OrderbyDayChartProps) {
+    // Define mood hierarchy (1 = worst, 5 = best)
+    const moodToNumber = (mood: Mood): number => {
+        const hierarchy = {
+            "horrible": 1,
+            "bad": 2,
+            "okay": 3,
+            "good": 4,
+            "great": 5
+        };
+        return hierarchy[mood];
     };
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const isDateDisabled = (date: Date) => {
-        const checkDate = new Date(date);
-        checkDate.setHours(0, 0, 0, 0);
-        return checkDate > today;
-    };
-
-    const parseDateKey = (dateKey: string): Date => {
-        const [year, month, day] = dateKey.split('-').map(Number);
-        return new Date(year, month - 1, day);
-    };
-
-    // Prepare modifiers
-    const modifiers = {
-        great: [] as Date[],
-        good: [] as Date[],
-        okay: [] as Date[],
-        bad: [] as Date[],
-        horrible: [] as Date[]
-    };
-
-    Object.keys(moodData).forEach(dateString => {
-        const moodType = moodData[dateString];
-        if (moodType && modifiers[moodType]) {
-            try {
-                const localDate = parseDateKey(dateString);
-                modifiers[moodType].push(localDate);
-            } catch (e) { }
-        }
-    });
-
-    const modifiersClassNames = {
-        great: `${moodColors.great} text-muted-foreground font-semibold`,
-        good: `${moodColors.good} text-muted-foreground font-semibold`,
-        okay: `${moodColors.okay} text-muted-foreground font-semibold`,
-        bad: `${moodColors.bad} text-muted-foreground font-semibold`,
-        horrible: `${moodColors.horrible} text-muted-foreground font-semibold`,
-    };
-
-    // Format a Date object to YYYY-MM-DD
-    const formatDateKey = (date: Date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
+    // Process and sort data by date
+    const chartData = data
+        .map(item => ({
+            ...item,
+            moodValue: moodToNumber(item.mood),
+            // Format date for display (optional)
+            displayDate: new Date(item.date).toLocaleDateString()
+        }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()); // Sort chronologically
 
     return (
-        <div className="space-y-6">
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                    .calendar-container .rdp-day_selected {
-                        position: relative;
-                        background-color: rgba(59, 130, 246, 0.1) !important;
-                    }
-                    
-                    .calendar-container .rdp-day_selected.border-b-4 {
-                        border-bottom-width: 4px !important;
-                    }
-                    
-                    .calendar-container .rdp-day:hover {
-                        background-color: rgba(59, 130, 246, 0.05) !important;
-                    }
-                `
-            }} />
-
-            <div className="bg-transparent rounded-xl p-6">
-                <div className="calendar-container">
-                    <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={onDateSelect}
-                        modifiers={modifiers}
-                        modifiersClassNames={modifiersClassNames}
-                        disabled={isDateDisabled}
-                        className="rounded-lg border bg-transparent shadow-sm mx-auto"
-                        key={`calendar-${Object.keys(moodData).length}`}
-                        components={{
-                            Day: ({ day, modifiers, ...props }) => {
-                                const dateKey = formatDateKey(day.date);
-                                const mood = moodData[dateKey];
-
-                                return (
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <div {...props}>{day.date.getDate()}</div>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <span>{mood ? `Mood: ${mood}` : 'No mood recorded'}</span>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                );
-                            }
-                        }}
-                    />
-                </div>
-            </div>
-
-            <div className="bg-transparent rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-muted-foreground mb-4">Color Meanings</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                    {colors.map((colorData) => (
-                        <div key={colorData.color} className="flex items-center gap-2 text-sm">
-                            <div
-                                className="w-6 h-6 rounded-full border-2 flex-shrink-0"
-                                style={{ backgroundColor: colorData.color }}
-                            ></div>
-                            <div>
-                                <p className="font-medium">{colorData.name}</p>
-                                <p className="text-xs text-gray-500 capitalize">{colorData.mood}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
+        <ResponsiveContainer width="100%" minHeight={300}>
+            <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                    dataKey="displayDate" 
+                    tick={{ fontSize: 12 }}
+                />
+                <YAxis 
+                    domain={[1, 5]}
+                    ticks={[1, 2, 3, 4, 5]}
+                    tickFormatter={(value) => {
+                        const labels = {1: "horrible", 2: "bad", 3: "okay", 4: "good", 5: "great"};
+                        return labels[value as keyof typeof labels];
+                    }}
+                />
+                <Tooltip 
+                    formatter={(value: number) => {
+                        const labels = {1: "horrible", 2: "bad", 3: "okay", 4: "good", 5: "great"};
+                        return [labels[value as keyof typeof labels], "Mood"];
+                    }}
+                    labelFormatter={(label) => `Date: ${label}`}
+                />
+                <Legend />
+                <Line 
+                    dataKey="moodValue" 
+                    type="monotone" 
+                    name="Daily Mood" 
+                    stroke="#8884d8" 
+                    strokeWidth={2}
+                    dot={{ fill: "#8884d8", strokeWidth: 2, r: 4 }}
+                />
+            </LineChart>
+        </ResponsiveContainer>
     );
 }
