@@ -13,14 +13,14 @@ export default function OrderByChat() {
     const { data: alldata, isPending, error } = useQuery(trpc.moodRespone.getAllMood.queryOptions());
 
     const mooodtoNumber = (m: Mood) => {
-        const hieracy = {
+        const hierarchy = {
             "horrible": 1,
             "bad": 2,
             "okay": 3,
             "good": 4,
             "great": 5,
         }
-        return hieracy[m];
+        return hierarchy[m];
     }
 
     // Convert numbers back to mood names for display
