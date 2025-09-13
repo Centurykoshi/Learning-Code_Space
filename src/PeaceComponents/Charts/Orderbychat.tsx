@@ -7,10 +7,10 @@ import { Title } from "@radix-ui/react-dialog";
 import { Item } from "@radix-ui/react-dropdown-menu";
 import { Value } from "@radix-ui/react-select";
 import { QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AreaChart,  CalendarDaysIcon, LineChartIcon, PieChart } from "lucide-react";
+import { AreaChartIcon, BarChartIcon, CalendarDaysIcon, LineChartIcon, PieChartIcon, } from "lucide-react";
 import { useState } from "react";
 import { Day } from "react-day-picker";
-import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, Rectangle, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, Rectangle, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Pie, PieChart, AreaChart, Area, } from "recharts";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -23,6 +23,14 @@ export default function OrderByChat() {
     const { data: alldata, isPending, error } = useQuery(trpc.moodRespone.getAllMood.queryOptions(
 
     ));
+
+    const moodToColor: Record<Mood, string> = {
+        horrible: '#ff6b6b',
+        bad: '#6394d4',
+        okay: '#96ceb4',
+        good: '#af5dcf',
+        great: '#feca57',
+    };
 
     const mooodtoNumber = (m: Mood) => {
         const hierarchy = {
@@ -48,23 +56,19 @@ export default function OrderByChat() {
     }
 
     const ButtonsChart = [{
-        Title: "LineGraph",
-        icon: LineChartIcon
+        Title: "LineGraph", icon: LineChartIcon
     },
 
-    {
-        Title: "BarGraph",
-        icon: BarChart
-    },
+    { Title: "BarGraph", icon: BarChartIcon },
 
     {
         Title: "PieChart",
-        icon: PieChart
+        icon: PieChartIcon
     },
 
     {
-        Title: "AreChart",
-        icon: AreaChart
+        Title: "AreaChart",
+        icon: AreaChartIcon
     }
     ]
 
@@ -111,7 +115,7 @@ export default function OrderByChat() {
 
 
     const handleClick = (title: string) => {
-        setSelectedGraph(title); 
+        setSelectedGraph(title);
         switch (title) {
             case "LineGraph":
                 toast.success("Get better you clicked on line graph")
@@ -123,7 +127,7 @@ export default function OrderByChat() {
             case "PieChart":
                 toast.success("Get better you clicked on Pie chart")
                 break;
-            case "AreChart":
+            case "AreaChart":
                 toast.success("Get better you clicked on Area chart")
                 break;
             case "7 days":
@@ -144,30 +148,94 @@ export default function OrderByChat() {
     const RenderSelectedChart = () => {
         switch (selectedGraph) {
             case "BarGraph":
-                
+
                 return (
                     <div className="space-y-2 w-full">
 
                         <ResponsiveContainer width={"100%"} minHeight={300}>
                             <BarChart data={chartData}
                                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }} barSize={20}>
-                                <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="displayDate" />
-                                <Tooltip labelFormatter={(label)=> "Date :" + label}
-                                    formatter={(value : number) => [numberToMood(value), "Mood"]}/>
+                                <Tooltip labelFormatter={(label) => "Date :" + label}
+                                    formatter={(value: number) => [numberToMood(value), "Mood"]} />
                                 <YAxis
                                     domain={[1, 5]}
                                     tickFormatter={numberToMood}
                                     ticks={[1, 2, 3, 4, 5]}
                                 />
-                                <Bar dataKey="moodValue" name="mood" fill="#8884d8" activeBar={<Rectangle  stroke="blue" />} radius={[4, 4, 0, 0]}/>
+                                <Bar dataKey="moodValue" name="mood" fill="#8884d8" activeBar={<Rectangle stroke="blue" />} radius={[4, 4, 0, 0]} type="monotone" />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
 
 
                 );
+
+
+            case "PieChart":
+                return (
+                    <div className="space-y-2">
+                        <ResponsiveContainer width={"100%"} minHeight={300}>
+                            <PieChart >
+                                <Pie dataKey={"moodValue"} cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label data={chartData} nameKey="mood" >
+                                    {chartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={moodToColor[entry.mood as keyof typeof moodToColor]} />
+                                    ))}
+
+                                </Pie>
+                                <Tooltip labelFormatter={(label) => "Date : " + label}
+                                    formatter={(value: number) => [numberToMood(value), "Mood"]} />
+
+
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                );
+
+            case "AreaChart":
+                return (
+                    <div className="space-y-2">
+                        <ResponsiveContainer width={"100%"} minHeight={300}>
+                            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0, }}>
+                                <XAxis dataKey="displayDate" />
+                                <Tooltip labelFormatter={(label) => "Date : " + label}
+                                    formatter={(value: number) => [numberToMood(value), "Mood"]} />
+                                <YAxis domain={[1, 5]} tickFormatter={numberToMood} ticks={[1, 2, 3, 4, 5]} />
+                                <Area type={"monotone"} dataKey="moodValue" stroke="#8884d8" fillOpacity={0.3} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+
+                    </div>
+
+                );
+
+            default:
+                return (
+                    <div className="space-y-2">
+                        <ResponsiveContainer width="100%" minHeight={300}>
+                            <LineChart data={chartData}>
+
+                                <XAxis dataKey="displayDate" />
+                                <YAxis
+                                    domain={[1, 5]}
+                                    tickFormatter={numberToMood}
+                                    ticks={[1, 2, 3, 4, 5]}
+                                />
+                                <Tooltip
+                                    labelFormatter={(label) => `Date: ${label}`}
+                                    formatter={(value: number) => [numberToMood(value), "Mood"]}
+                                />
+                                <Legend />
+                                <Line dataKey="moodValue" type={"monotone"} name="Mood" stroke="#8884d8" activeDot={{ r: 8 }} />
+                            </LineChart>
+                        </ResponsiveContainer>
+
+                    </div>
+
+
+                )
         }
+
     }
 
     return (
