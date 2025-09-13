@@ -78,7 +78,7 @@ export default function OrderByChat() {
     },
 
     {
-        Title: "14 days ",
+        Title: "14 days",
         icon: CalendarDaysIcon
     },
 
@@ -104,6 +104,33 @@ export default function OrderByChat() {
     if (isPending) return <div>Loading...</div>;
     if (error) return <div>Error loading data</div>;
     if (!alldata || !Array.isArray(alldata)) return <div>No data available</div>;
+
+    const getFilteredData = () => {
+        const now = new Date();
+
+        switch (SelectedPeriod) {
+            case "7 days":
+                const weekAgo = new Date();
+                weekAgo.setDate(now.getDate() - 7);
+                return alldata.filter(entry => new Date(entry.date) >= weekAgo);
+
+            case "14 days":
+                const twoWeeksAgo = new Date();
+                twoWeeksAgo.setDate(now.getDate() - 14);
+                return alldata.filter(entry => new Date(entry.date) >= twoWeeksAgo);
+
+            case "Month":
+                const monthAgo = new Date();
+                monthAgo.setMonth(now.getMonth() - 1);
+                return alldata.filter(entry => new Date(entry.date) >= monthAgo);
+
+            case "Max":
+            default:
+                return alldata;
+        }
+    };
+    const filterdata = getFilteredData();
+
 
     const chartData = alldata
         .map(item => ({
@@ -143,7 +170,23 @@ export default function OrderByChat() {
                 toast.success("Get Better you clicked on MAX")
                 break;
         }
+        // Custom tooltip component
+
+
     }
+    const CustomTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
+                    <p className="font-semibold text-gray-700">{`Date: ${label}`}</p>
+                    <p className="text-blue-600 font-medium">
+                        {`Mood: ${numberToMood(payload[0].value)}`}
+                    </p>
+                </div>
+            );
+        }
+        return null;
+    };
 
     const RenderSelectedChart = () => {
         switch (selectedGraph) {
@@ -154,16 +197,20 @@ export default function OrderByChat() {
 
                         <ResponsiveContainer width={"100%"} minHeight={300}>
                             <BarChart data={chartData}
-                                margin={{ top: 20, right: 30, left: 20, bottom: 5 }} barSize={20}>
-                                <XAxis dataKey="displayDate" />
-                                <Tooltip labelFormatter={(label) => "Date :" + label}
-                                    formatter={(value: number) => [numberToMood(value), "Mood"]} />
+                                margin={{ top: 20, right: 30, left: 20, bottom: 5 }} barSize={30}>
+                                <XAxis dataKey="displayDate" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
+                                <Tooltip content={<CustomTooltip />} />
                                 <YAxis
                                     domain={[1, 5]}
                                     tickFormatter={numberToMood}
                                     ticks={[1, 2, 3, 4, 5]}
+                                    tick={{ fontSize: 12 }}
                                 />
-                                <Bar dataKey="moodValue" name="mood" fill="#8884d8" activeBar={<Rectangle stroke="blue" />} radius={[4, 4, 0, 0]} type="monotone" />
+                                <Bar dataKey="moodValue" name="mood" fill="#6366f1" activeBar={<Rectangle stroke="blue" />} radius={[4, 4, 0, 0]} >
+                                    {chartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={moodToColor[entry.mood as Mood]} />
+                                    ))}
+                                </Bar>
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -173,18 +220,44 @@ export default function OrderByChat() {
 
 
             case "PieChart":
+                const CustomPieTooltip = ({ active, payload }: any) => {
+                    if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                            <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
+                                <p className="font-semibold text-gray-700 capitalize">{`${data.name}`}</p>
+                                <p className="text-blue-600 font-medium">{`Count: ${data.count}`}</p>
+                                <p className="text-green-600 font-medium">{`${data.percentage}%`}</p>
+                            </div>
+                        );
+                    }
+                    return null;
+                };
+                const moodCounts = alldata.reduce((acc, item) => {
+                    const mood = item.mood as Mood;
+                    acc[mood] = (acc[mood] || 0) + 1;
+                    return acc;
+                }, {} as Record<Mood, number>);
+
+                const pieData = Object.entries(moodCounts).map(([mood, count]) => ({
+                    name: mood,
+                    count: count,
+                    percentage: ((count / alldata.length) * 100).toFixed(1)
+
+
+                }));
                 return (
                     <div className="space-y-2">
                         <ResponsiveContainer width={"100%"} minHeight={300}>
                             <PieChart >
-                                <Pie dataKey={"moodValue"} cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label data={chartData} nameKey="mood" >
-                                    {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={moodToColor[entry.mood as keyof typeof moodToColor]} />
+                                <Pie dataKey={"count"} cx="50%" cy="50%" outerRadius={120} innerRadius={60} fill="#8884d8" label={({ name, percentage }) => `${name}: ${percentage}%`} data={pieData} nameKey="name" stroke="#fff"
+                                    strokeWidth={2} >
+                                    {pieData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={moodToColor[entry.name as Mood]} />
                                     ))}
 
                                 </Pie>
-                                <Tooltip labelFormatter={(label) => "Date : " + label}
-                                    formatter={(value: number) => [numberToMood(value), "Mood"]} />
+                                <Tooltip content={CustomPieTooltip} />
 
 
                             </PieChart>
@@ -197,11 +270,33 @@ export default function OrderByChat() {
                     <div className="space-y-2">
                         <ResponsiveContainer width={"100%"} minHeight={300}>
                             <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0, }}>
-                                <XAxis dataKey="displayDate" />
-                                <Tooltip labelFormatter={(label) => "Date : " + label}
-                                    formatter={(value: number) => [numberToMood(value), "Mood"]} />
-                                <YAxis domain={[1, 5]} tickFormatter={numberToMood} ticks={[1, 2, 3, 4, 5]} />
-                                <Area type={"monotone"} dataKey="moodValue" stroke="#8884d8" fillOpacity={0.3} />
+                                <defs>
+                                    <linearGradient id="moodGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0.1} />
+                                    </linearGradient>
+                                </defs>
+                                <XAxis
+                                    dataKey="displayDate"
+                                    tick={{ fontSize: 12 }}
+                                    angle={-45}
+                                    textAnchor="end"
+                                    height={60}
+                                />
+                                <Tooltip content={CustomTooltip} />
+                                <YAxis
+                                    domain={[1, 5]}
+                                    tickFormatter={numberToMood}
+                                    ticks={[1, 2, 3, 4, 5]}
+                                    tick={{ fontSize: 12 }}
+                                />
+                                <Area type="monotone"
+                                    dataKey="moodValue"
+                                    stroke="#6366f1"
+                                    strokeWidth={3}
+                                    fill="url(#moodGradient)"
+                                    dot={{ fill: '#6366f1', strokeWidth: 2, r: 4 }}
+                                    activeDot={{ r: 6, stroke: '#6366f1', strokeWidth: 2 }} />
                             </AreaChart>
                         </ResponsiveContainer>
 
@@ -215,18 +310,30 @@ export default function OrderByChat() {
                         <ResponsiveContainer width="100%" minHeight={300}>
                             <LineChart data={chartData}>
 
-                                <XAxis dataKey="displayDate" />
+                                <XAxis
+                                    dataKey="displayDate"
+                                    tick={{ fontSize: 12 }}
+                                    angle={-45}
+                                    textAnchor="end"
+                                    height={60}
+                                />
                                 <YAxis
                                     domain={[1, 5]}
                                     tickFormatter={numberToMood}
                                     ticks={[1, 2, 3, 4, 5]}
+                                    tick={{ fontSize: 12 }}
                                 />
-                                <Tooltip
-                                    labelFormatter={(label) => `Date: ${label}`}
-                                    formatter={(value: number) => [numberToMood(value), "Mood"]}
-                                />
+                                <Tooltip content={CustomTooltip} />
                                 <Legend />
-                                <Line dataKey="moodValue" type={"monotone"} name="Mood" stroke="#8884d8" activeDot={{ r: 8 }} />
+                                <Line
+                                    dataKey="moodValue"
+                                    type="monotone"
+                                    name="Mood"
+                                    stroke="#6366f1"
+                                    strokeWidth={3}
+                                    dot={{ fill: '#6366f1', strokeWidth: 2, r: 4 }}
+                                    activeDot={{ r: 6, stroke: '#6366f1', strokeWidth: 2, fill: '#fff' }}
+                                />   <Line dataKey="moodValue" type={"monotone"} name="Mood" stroke="#8884d8" activeDot={{ r: 8 }} />
                             </LineChart>
                         </ResponsiveContainer>
 
@@ -240,7 +347,7 @@ export default function OrderByChat() {
 
     return (
         <div className="space-y-2 w-full">
-            <Card>
+            <Card className="bg-transparent">
                 <CardContent className="grid grid-cols-4">
                     {ButtonsChart.map((button) => {
                         return (
@@ -253,7 +360,7 @@ export default function OrderByChat() {
                     })}
 
                     {Daysbuttons.map((button) => (
-                        <Button key={button.Title} variant="outline" className="m-2 text-sm ">
+                        <Button key={button.Title} variant="outline" className="m-2 text-sm " onClick={() => handleClick(button.Title)} >
                             <button.icon className="mr-2 h-2 w-2" />
                             {button.Title}
                         </Button>
