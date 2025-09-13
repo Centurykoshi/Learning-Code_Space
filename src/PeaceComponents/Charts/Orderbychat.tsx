@@ -110,14 +110,14 @@ export default function OrderByChat() {
 
         switch (SelectedPeriod) {
             case "7 days":
-                const weekAgo = new Date();
-                weekAgo.setDate(now.getDate() - 7);
-                return alldata.filter(entry => new Date(entry.date) >= weekAgo);
+                const weekago = new Date();
+                weekago.setDate(now.getDate() - 7);
+                return alldata.filter(item => new Date(item.date) >= weekago);
 
             case "14 days":
                 const twoWeeksAgo = new Date();
                 twoWeeksAgo.setDate(now.getDate() - 14);
-                return alldata.filter(entry => new Date(entry.date) >= twoWeeksAgo);
+                return alldata.filter(item => new Date(item.date) >= twoWeeksAgo);
 
             case "Month":
                 const monthAgo = new Date();
@@ -127,22 +127,26 @@ export default function OrderByChat() {
             case "Max":
             default:
                 return alldata;
+
+
         }
     };
     const filterdata = getFilteredData();
 
 
-    const chartData = alldata
+    const chartData = filterdata
         .map(item => ({
             ...item,
             moodValue: mooodtoNumber(item.mood as Mood),
             displayDate: new Date(item.date).toLocaleDateString(),
+            fullDate: new Date(item.date).toLocaleDateString(),
         }))
         .sort((a, b) => a.date.localeCompare(b.date));
 
 
     const handleClick = (title: string) => {
         setSelectedGraph(title);
+        setSelectedPeriod(title);
         switch (title) {
             case "LineGraph":
                 toast.success("Get better you clicked on line graph")
