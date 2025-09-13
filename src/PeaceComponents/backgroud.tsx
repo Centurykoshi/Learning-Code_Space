@@ -25,19 +25,19 @@ export default function Background() {
                 <div className="w-full">
                     <div className="grid grid-cols-1  gap-4">
 
-                        <Card>
+                        <Card className="bg-transparent">
                             <CardHeader>
                                 <CardTitle>
                                     Learning about Charts
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <OrderByChat  />
+                                <OrderByChat />
                             </CardContent>
                         </Card>
                     </div>
                 </div>
-               
+
 
             </div>
 
