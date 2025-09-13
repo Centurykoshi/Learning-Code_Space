@@ -9,6 +9,7 @@ import OrderByChat from "./Charts/Orderbychat";
 import MoodTracker from "./MoodTracker";
 
 
+
 export default function Background() {
     return (
         <div className="flex min-h-screen bg-transparent rounded-2xl ">
@@ -16,7 +17,7 @@ export default function Background() {
 
                 {/* <CalenderWork /> */}
                 {/* <CanvasMoodTracker /> */}
-                <div className="flex flex-col min-w-[30vw]">
+                <div className="grid grid-cols-1 gap-4 min-w-[35vw]">
                     <MoodTracker />
 
                 </div>
@@ -36,6 +37,7 @@ export default function Background() {
                         </Card>
                     </div>
                 </div>
+               
 
             </div>
 

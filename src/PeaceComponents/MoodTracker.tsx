@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTRPC } from '@/trpc/client';
 import { toast } from 'sonner';
 
@@ -16,6 +16,7 @@ export default function MoodTracker() {
     const [moodData, setMoodData] = useState<{ [key: string]: Mood }>({});
     const [usedColors, setUsedColors] = useState<Set<string>>(new Set());
     const [brushSize, setBrushSize] = useState(5);
+    const queryClient = useQueryClient();
 
     const trpc = useTRPC();
 
@@ -23,6 +24,9 @@ export default function MoodTracker() {
         onSuccess: (data) => {
             console.log('Mutation success:', data);
             toast.success("Mood saved to the database");
+            queryClient.invalidateQueries({
+                queryKey: [["MoodRespone", "getAllMood"]]
+            });
         },
         onError: (error) => {
             console.error('Mutation error:', error);
@@ -193,14 +197,12 @@ export default function MoodTracker() {
                                                     <button
                                                         key={size}
                                                         onClick={() => setBrushSize(size)}
-                                                        className={`p-3 transition-all duration-200 flex flex-col items-center gap-2 ${
-                                                            brushSize === size ? "text-muted-foreground" : "text-secondary-background"
-                                                        }`}
+                                                        className={`p-3 transition-all duration-200 flex flex-col items-center gap-2 ${brushSize === size ? "text-muted-foreground" : "text-secondary-background"
+                                                            }`}
                                                     >
                                                         <div
-                                                            className={`rounded-full cursor-pointer ${
-                                                                brushSize === size ? 'bg-secondary-foreground' : 'bg-primary-foreground'
-                                                            }`}
+                                                            className={`rounded-full cursor-pointer ${brushSize === size ? 'bg-secondary-foreground' : 'bg-primary-foreground'
+                                                                }`}
                                                             style={{
                                                                 width: `${Math.max(size, 8)}px`,
                                                                 height: `${Math.max(size, 8)}px`
