@@ -110,7 +110,7 @@ export default function MoodCalendar({
                         disabled={isDateDisabled}
                         className="rounded-lg border bg-transparent shadow-sm mx-auto"
                         key={`calendar-${Object.keys(moodData).length}`}
-                         // Force re-render with styles
+                    // Force re-render with styles
                     />
                 </div>
             </div>
