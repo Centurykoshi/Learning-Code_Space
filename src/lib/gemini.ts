@@ -72,7 +72,7 @@ function createSystemPrompt(user: UserData, userMessage: string, conversationHis
     }
     if (memory.importantMessages?.length > 0) {
       const recentImportant = memory.importantMessages.slice(-2);
-      memoryContext += `\nIMPORTANT CONTEXT: ${recentImportant.map(msg =>
+      memoryContext += `\nIMPORTANT CONTEXT: ${recentImportant.map((msg : any) =>
         `User said: "${msg.userMessage.substring(0, 100)}..."`
       ).join(' ')}`;
     }
@@ -88,7 +88,7 @@ function createSystemPrompt(user: UserData, userMessage: string, conversationHis
   let historyContext = "";
   if (conversationHistory?.messages?.length > 1) {
     const recentMessages = conversationHistory.messages.slice(-6); // Last 6 messages
-    historyContext = "\nRECENT CONVERSATION:\n" + recentMessages.map(msg =>
+    historyContext = "\nRECENT CONVERSATION:\n" + recentMessages.map((msg : any) =>
       `${msg.sender === 'USER' ? user.name : 'Dr. Maya'}: ${msg.content.substring(0, 200)}${msg.content.length > 200 ? '...' : ''}`
     ).join('\n');
   }
