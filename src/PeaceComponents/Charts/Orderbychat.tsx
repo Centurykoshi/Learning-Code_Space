@@ -144,40 +144,42 @@ export default function OrderByChat() {
         .sort((a, b) => a.date.localeCompare(b.date));
 
 
-    const handleClick = (title: string) => {
-        setSelectedGraph(title);
-        setSelectedPeriod(title);
-        switch (title) {
-            case "LineGraph":
-                toast.success("Get better you clicked on line graph")
-                break;
-
-            case "BarGraph":
-                toast.success("Get better you clicked on Bar graph")
-                break;
-            case "PieChart":
-                toast.success("Get better you clicked on Pie chart")
-                break;
-            case "AreaChart":
-                toast.success("Get better you clicked on Area chart")
-                break;
-            case "7 days":
-                toast.success("Get better you clicked on 7 days")
-                break;
-            case "14 days":
-                toast.success("Get better you clicked on 14 days")
-                break;
-            case "Month":
-                toast.success("Get better you clicked on Month")
-                break;
-            case "Max":
-                toast.success("Get Better you clicked on MAX")
-                break;
-        }
-        // Custom tooltip component
-
-
+    const handleChartClick = (title: string) => {
+    setSelectedGraph(title);
+    switch (title) {
+        case "LineGraph":
+            toast.success("Get better you clicked on line graph")
+            break;
+        case "BarGraph":
+            toast.success("Get better you clicked on Bar graph")
+            break;
+        case "PieChart":
+            toast.success("Get better you clicked on Pie chart")
+            break;
+        case "AreaChart":
+            toast.success("Get better you clicked on Area chart")
+            break;
     }
+}
+
+const handlePeriodClick = (title: string) => {
+    setSelectedPeriod(title);
+    switch (title) {
+        case "7 days":
+            toast.success("Get better you clicked on 7 days")
+            break;
+        case "14 days":
+            toast.success("Get better you clicked on 14 days")
+            break;
+        case "Month":
+            toast.success("Get better you clicked on Month")
+            break;
+        case "Max":
+            toast.success("Get Better you clicked on MAX")
+            break;
+    }
+}
+
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
             return (
@@ -237,7 +239,7 @@ export default function OrderByChat() {
                     }
                     return null;
                 };
-                const moodCounts = alldata.reduce((acc, item) => {
+                const moodCounts = filterdata.reduce((acc, item) => {
                     const mood = item.mood as Mood;
                     acc[mood] = (acc[mood] || 0) + 1;
                     return acc;
@@ -246,7 +248,7 @@ export default function OrderByChat() {
                 const pieData = Object.entries(moodCounts).map(([mood, count]) => ({
                     name: mood,
                     count: count,
-                    percentage: ((count / alldata.length) * 100).toFixed(1)
+                    percentage: ((count / filterdata.length) * 100).toFixed(1)
 
 
                 }));
@@ -312,8 +314,7 @@ export default function OrderByChat() {
                 return (
                     <div className="space-y-2">
                         <ResponsiveContainer width="100%" minHeight={300}>
-                            <LineChart data={chartData}>
-
+                            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20 }}>
                                 <XAxis
                                     dataKey="displayDate"
                                     tick={{ fontSize: 12 }}
@@ -337,45 +338,68 @@ export default function OrderByChat() {
                                     strokeWidth={3}
                                     dot={{ fill: '#6366f1', strokeWidth: 2, r: 4 }}
                                     activeDot={{ r: 6, stroke: '#6366f1', strokeWidth: 2, fill: '#fff' }}
-                                />   <Line dataKey="moodValue" type={"monotone"} name="Mood" stroke="#8884d8" activeDot={{ r: 8 }} />
+                                />
                             </LineChart>
                         </ResponsiveContainer>
-
                     </div>
-
-
                 )
         }
 
     }
 
     return (
-        <div className="space-y-2 w-full">
-            <Card className="bg-transparent">
-                <CardContent className="grid grid-cols-4">
-                    {ButtonsChart.map((button) => {
-                        return (
+        <div className="space-y-3 w-full">
+            <Card className="bg-transparent border-none">
+                <CardContent className="space-y-3">
+                    {/* Chart Type Selection */}
+                    <div className="space-y-2">
+                        <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                            Chart Type: <span className="text-primary font-semibold">{selectedGraph}</span>
+                        </h3>
+                        <div className="grid grid-cols-4 gap-1">
+                            {ButtonsChart.map((button) => (
+                                <Button 
+                                    key={button.Title} 
+                                    variant={selectedGraph === button.Title ? "default" : "outline"} 
+                                    size="sm"
+                                    className="h-8  text-xs font-medium"
+                                    onClick={() => handleChartClick(button.Title)}
+                                >
+                                    <button.icon className="mr-1 h-3 w-3" />
+                                    <span className="hidden sm:inline">{button.Title}</span>
+                                    <span className="sm:hidden">{button.Title.slice(0, 4)}</span>
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
 
-                            <Button key={button.Title} variant="outline" className="m-2 text-sm " onClick={() => handleClick(button.Title)} >
-                                <button.icon className="mr-2 h-2 w-2" />
-                                {button.Title}
-                            </Button>
-                        );
-                    })}
-
-                    {Daysbuttons.map((button) => (
-                        <Button key={button.Title} variant="outline" className="m-2 text-sm " onClick={() => handleClick(button.Title)} >
-                            <button.icon className="mr-2 h-2 w-2" />
-                            {button.Title}
-                        </Button>
-                    ))}
-
+                    {/* Time Period Selection */}
+                    <div className="space-y-2">
+                        <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                            Time Period: <span className="text-primary font-semibold">{SelectedPeriod}</span>
+                        </h3>
+                        <div className="grid grid-cols-4 gap-1">
+                            {Daysbuttons.map((button) => (
+                                <Button 
+                                    key={button.Title} 
+                                    variant={SelectedPeriod === button.Title ? "default" : "outline"} 
+                                    size="sm"
+                                    className="h-8 px-2 text-xs font-medium"
+                                    onClick={() => handlePeriodClick(button.Title)}
+                                >
+                                    <button.icon className="mr-1 h-3 w-3" />
+                                    <span>{button.Title}</span>
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
-            {RenderSelectedChart()}
-
-
+            
+            {/* Chart Display */}
+            <div className="bg-transparent rounded-lg p-2">
+                {RenderSelectedChart()}
+            </div>
         </div>
-
     )
 }

@@ -2,14 +2,24 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTRPC } from '@/trpc/client';
 import { toast } from 'sonner';
-
+import CardComponent from "./CardComponent";
 import MoodCalendar from './MoodCalender';
 import DrawingCanvas from './Canvaesasfs';
 import { Palette } from 'lucide-react';
 
 type Mood = 'great' | 'good' | 'okay' | 'bad' | 'horrible';
 
-export default function MoodTracker() {
+interface MoodTrackerProps {
+    externalSelectedDate?: Date;
+    externalShowOptions?: boolean;
+    onCloseOptions?: () => void;
+}
+
+export default function MoodTracker({
+    externalSelectedDate,
+    externalShowOptions,
+    onCloseOptions
+}: MoodTrackerProps) {
     const [selectedDate, setSelectedDate] = useState<Date>();
     const [showCanvas, setShowCanvas] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
@@ -17,6 +27,10 @@ export default function MoodTracker() {
     const [usedColors, setUsedColors] = useState<Set<string>>(new Set());
     const [brushSize, setBrushSize] = useState(5);
     const queryClient = useQueryClient();
+
+    // Use external state when provided, but prefer internal selection for calendar interactions
+    const currentSelectedDate = selectedDate || externalSelectedDate;
+    const currentShowOptions = externalShowOptions !== undefined ? externalShowOptions : showOptions;
 
     const trpc = useTRPC();
 
@@ -81,20 +95,29 @@ export default function MoodTracker() {
 
     const handleDateSelect = useCallback((date: Date | undefined) => {
         if (date) {
+            // Always allow calendar date selection
             setSelectedDate(date);
-            setShowOptions(true);
+            if (externalShowOptions === undefined) {
+                // Only control showOptions internally if not externally controlled
+                setShowOptions(true);
+            }
             setUsedColors(new Set());
         }
-    }, []);
+    }, [externalShowOptions]);
 
     const startDrawingSession = useCallback(() => {
-        setShowOptions(false);
+        if (externalShowOptions !== undefined) {
+            // If externally controlled, don't change options state
+        } else {
+            setShowOptions(false);
+        }
         setShowCanvas(true);
     }, []);
 
     const saveMood = useCallback(async (colors: Set<string>) => {
-        if (selectedDate && colors.size > 0) {
-            const dateKey = formatDateKey(selectedDate);
+        const dateToUse = currentSelectedDate;
+        if (dateToUse && colors.size > 0) {
+            const dateKey = formatDateKey(dateToUse);
             const mood = analyzeMoodFromColors(colors);
 
             // Update local state first
@@ -112,22 +135,29 @@ export default function MoodTracker() {
 
                 // Close modals after successful save
                 setShowCanvas(false);
-                setShowOptions(false);
+                if (onCloseOptions) {
+                    onCloseOptions();
+                } else {
+                    setShowOptions(false);
+                    setSelectedDate(undefined);
+                }
                 setUsedColors(new Set());
-                // Don't clear selectedDate immediately to maintain calendar state
-                setTimeout(() => setSelectedDate(undefined), 100);
             } catch (error) {
                 // Revert local state on error
                 setMoodData(moodData);
             }
         }
-    }, [selectedDate, moodData, Save_Mood_Mutation, analyzeMoodFromColors]);
+    }, [currentSelectedDate, moodData, Save_Mood_Mutation, analyzeMoodFromColors, onCloseOptions]);
 
     const closeAll = useCallback(() => {
         setShowCanvas(false);
-        setShowOptions(false);
-        setSelectedDate(undefined);
-    }, []);
+        if (onCloseOptions) {
+            onCloseOptions();
+        } else {
+            setShowOptions(false);
+            setSelectedDate(undefined);
+        }
+    }, [onCloseOptions]);
 
     useEffect(() => {
         if (allMoods && Array.isArray(allMoods)) {
@@ -142,19 +172,20 @@ export default function MoodTracker() {
     }, [allMoods]);
 
     return (
-        <div className="max-h-[80vh] bg-transparent shadow-sm p-6 overflow-auto custom-scrollbar">
+        <div className="max-h-[60vh] bg-transparent shadow-sm p-6 overflow-auto custom-scrollbar">
             <div className="max-w-4xl mx-auto">
                 <div className="bg-transparent rounded-2xl shadow-xl p-8 space-y-6">
-                    {!showCanvas && !showOptions ? (
+
+                    {!showCanvas && !currentShowOptions ? (
                         <MoodCalendar
-                            selectedDate={selectedDate}
+                            selectedDate={currentSelectedDate}
                             onDateSelect={handleDateSelect}
                             moodData={moodData}
                             colors={colors}
                         />
                     ) : showCanvas ? (
                         <DrawingCanvas
-                            selectedDate={selectedDate}
+                            selectedDate={currentSelectedDate}
                             colors={colors}
                             brushSize={brushSize}
                             setBrushSize={setBrushSize}
@@ -167,7 +198,7 @@ export default function MoodTracker() {
                                 <p className="text-muted-foreground max-w-md mx-auto">
                                     How would you like to express your feelings for{' '}
                                     <span className="font-semibold text-muted-background">
-                                        {selectedDate?.toLocaleDateString('en-US', {
+                                        {currentSelectedDate?.toLocaleDateString('en-US', {
                                             weekday: 'long',
                                             month: 'long',
                                             day: 'numeric',
