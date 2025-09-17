@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import { CardContent, Card } from "../ui/card";
 import { BookIcon, StarIcon } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
@@ -8,137 +8,12 @@ import { useTRPC } from "@/trpc/client";
 import { toast } from "sonner";
 import z from "zod";
 import { Button } from "../ui/button";
-import { TypingWords } from "@/hooks/types";
-import { TypingContext } from "@/context/typing.context";
-import { ProfileContext } from "@/context/profile.context";
-import Input from "./Input";
-
-
-
-
 
 export default function Typingsetting() {
 
     const [time, settime] = useState<number>(15);
     const [mode, setmode] = useState<"Story" | "Affirmation">("Affirmation");
     const [response, setResponse] = useState<any>(null);
-    const [istyping, setIsTyping] = useState(false);
-    const [isFocused, setIsFocused] = useState(false);
-
-    // Typing state management
-    const [typingWords, setTypingWords] = useState<TypingWords>([]);
-    const [wordIndex, setWordIndex] = useState(0);
-    const [charIndex, setCharIndex] = useState(0);
-    const [inputValue, setInputValue] = useState("");
-
-    const { typingStarted, onTypingStarted, onTypingEnded, onUpdateTypingFocus } = useContext(TypingContext);
-    const profileContext = useContext(ProfileContext);
-
-    if (!profileContext) {
-        throw new Error('ProfileContext must be used within a ProfileProvider');
-    }
-
-    const { profile } = profileContext;
-
-    const wordRef = useRef<HTMLDivElement>(null);
-    const charRef = useRef<HTMLSpanElement>(null);
-    const hiddenInputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        if (istyping) hiddenInputRef.current?.focus();
-    }, [istyping])
-
-    // Convert response text to TypingWords format
-    useEffect(() => {
-        if (response) {
-            const words = response.split(' ').map((word: string) => ({
-                isIncorrect: false,
-                chars: word.split('').map((char: string) => ({
-                    content: char,
-                    type: 'none' as const
-                }))
-            }));
-            setTypingWords(words);
-            setWordIndex(0);
-            setCharIndex(0);
-            setInputValue("");
-        }
-    }, [response]);
-
-    // Handle typing input
-    const handleKeyDown = (e: KeyboardEvent) => {
-        if (!typingWords.length) return;
-
-        const currentWord = typingWords[wordIndex];
-        if (!currentWord) return;
-
-        if (e.key === 'Backspace') {
-            e.preventDefault();
-            if (charIndex > 0) {
-                setCharIndex(charIndex - 1);
-                const updatedWords = [...typingWords];
-                updatedWords[wordIndex].chars[charIndex - 1].type = 'none';
-                setTypingWords(updatedWords);
-                setInputValue(inputValue.slice(0, -1));
-            }
-            return;
-        }
-
-        if (e.key === ' ') {
-            e.preventDefault();
-            if (wordIndex < typingWords.length - 1) {
-                setWordIndex(wordIndex + 1);
-                setCharIndex(0);
-                setInputValue(inputValue + ' ');
-            }
-            return;
-        }
-
-        if (e.key.length === 1) {
-            e.preventDefault();
-
-            if (!typingStarted) {
-                onTypingStarted();
-            }
-
-            const updatedWords = [...typingWords];
-            const expectedChar = currentWord.chars[charIndex];
-
-            if (expectedChar) {
-                if (e.key === expectedChar.content) {
-                    updatedWords[wordIndex].chars[charIndex].type = 'correct';
-                } else {
-                    updatedWords[wordIndex].chars[charIndex].type = 'incorrect';
-                    updatedWords[wordIndex].isIncorrect = true;
-                }
-
-                setTypingWords(updatedWords);
-                setCharIndex(charIndex + 1);
-                setInputValue(inputValue + e.key);
-            } else {
-                // Extra character
-                updatedWords[wordIndex].chars.push({
-                    content: e.key,
-                    type: 'extra'
-                });
-                setTypingWords(updatedWords);
-                setCharIndex(charIndex + 1);
-                setInputValue(inputValue + e.key);
-            }
-        }
-    };
-
-    // Add event listener for typing
-    useEffect(() => {
-        if (typingWords.length > 0) {
-            document.addEventListener('keydown', handleKeyDown);
-            return () => document.removeEventListener('keydown', handleKeyDown);
-        }
-    }, [typingWords, wordIndex, charIndex, inputValue, typingStarted, onTypingStarted]);
-
-
-
-
 
     const times = [15, 30, 60, 90, 120];
     const modes = ["Story", "Affirmation"];
@@ -235,22 +110,12 @@ export default function Typingsetting() {
 
 
                 </div>
-                <div className="w-full max-w-4xl flex justify-center items-center mt-8">
-                    {typingWords.length > 0 ? (
-                        <div className="w-full max-w-3xl">
-                            <Input
-                                words={typingWords}
-                                wordIndex={wordIndex}
-                                charIndex={charIndex}
-                            />
-                        </div>
-                    ) : (
-                        <div className="text-center max-w-3xl">
-                            <p className="text-muted-foreground text-lg md:text-xl lg:text-2xl leading-relaxed">
-                                {response ? response : "Click generate to get your personalized typing content"}
-                            </p>
-                        </div>
-                    )}
+                <div className="w-full max-w-4xl flex justify-center items-center">
+                    <div className="text-center max-w-3xl">
+                        <p className="text-muted-foreground text-lg md:text-xl lg:text-2xl leading-relaxed">
+                            {response ? response : "Click generate to get your personalized typing content"}
+                        </p>
+                    </div>
                 </div>
             </div>
         </>

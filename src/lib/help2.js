@@ -1,106 +1,100 @@
-import { createContext, useEffect, useState } from 'react';
-import { TypingResult } from '@/types';
-import { ResultOptions } from '@/components/Typing/Result';
-
-interface Context {
-  typingStarted: boolean;
-  typingFocused: boolean;
-  typingDisabled: boolean;
-  resultPreview: { state: TypingResult; options?: ResultOptions } | null;
-  lineHeight: number;
-  setLineHeight: React.Dispatch<React.SetStateAction<number>>;
-  typemodeVisible: boolean;
-  setTypemodeVisible: React.Dispatch<React.SetStateAction<boolean>>;
-  onTypingStarted: () => void;
-  onTypingEnded: () => void;
-  onTypingDisable: () => void;
-  onTypingAllow: () => void;
-  onPreviewResult: (result: TypingResult | null, options?: ResultOptions) => void;
-  onUpdateTypingFocus: (bool: boolean) => void;
-}
-const initial: Context = {
-  typingStarted: false,
-  typingFocused: false,
-  typingDisabled: false,
-  resultPreview: null,
-  lineHeight: 0,
-  typemodeVisible: true,
-  setTypemodeVisible: () => {},
-  setLineHeight: () => {},
-  onTypingStarted: () => {},
-  onTypingEnded: () => {},
-  onTypingDisable: () => {},
-  onTypingAllow: () => {},
-  onPreviewResult: () => {},
-  onUpdateTypingFocus: () => {},
-};
-
-const TypingContext = createContext(initial);
+import { useContext, useEffect, useState } from 'react';
+import { TypingContext } from '@/context/typing.context';
+import { ProfileContext } from '@/context/profile.context';
+import styles from './Caret.module.scss';
 
 interface Props {
-  children: React.ReactNode;
+  lineHeight: number;
+  wordIndex: number;
+  charIndex: number;
+  wordsOffset: number;
+  firstWord: string;
+  wordRef: React.MutableRefObject<HTMLDivElement | undefined>;
+  charRef: React.MutableRefObject<HTMLSpanElement | undefined>;
+  className?: string;
 }
 
-const TypingContextProvider = ({ children }: Props) => {
-  const [typingStarted, setTypingStarted] = useState(initial.typingStarted);
-  const [typingFocused, setTypingFocused] = useState(initial.typingFocused);
-  const [typingDisabled, setTypingDisabled] = useState(initial.typingDisabled);
-  const [resultPreview, setResultPreview] = useState(initial.resultPreview);
-  const [lineHeight, setLineHeight] = useState(initial.lineHeight);
-  const [typemodeVisible, setTypemodeVisible] = useState(initial.typemodeVisible);
+export default function Caret(props: Props) {
+  const {
+    lineHeight,
+    wordIndex,
+    charIndex,
+    wordsOffset,
+    firstWord,
+    wordRef,
+    charRef,
+    className,
+  } = props;
 
-  const onTypingStarted = () => setTypingStarted(true);
-  const onTypingEnded = () => setTypingStarted(false);
+  const { typingStarted } = useContext(TypingContext);
+  const { profile } = useContext(ProfileContext);
 
-  const onTypingDisable = () => setTypingDisabled(true);
-  const onTypingAllow = () => setTypingDisabled(false);
+  const [caretPos, setCaretPos] = useState({ x: 0, y: 0 });
+  const [charWidth, setCharWidth] = useState(0);
 
-  const onPreviewResult: Context['onPreviewResult'] = (result, options) => {
-    setResultPreview(result ? { state: result, options } : null);
-  };
-
-  const onUpdateTypingFocus: Context['onUpdateTypingFocus'] = (bool) => {
-    setTypingFocused(bool);
-  };
+  const { caretStyle, fontSize, smoothCaret } = profile.customize;
 
   useEffect(() => {
-    if (typingFocused) {
-      document.documentElement.style.cursor = 'none';
-    } else {
-      document.documentElement.style.cursor = 'auto';
+    if (!wordRef.current) return;
+    const {
+      offsetLeft: wordOffsetLeft,
+      offsetTop: wordOffsetTop,
+      offsetWidth: wordOffsetWidth,
+    } = wordRef.current;
+
+    if (!charRef.current) {
+      return setCaretPos({
+        x: wordOffsetLeft + wordOffsetWidth,
+        y: wordOffsetTop - wordsOffset,
+      });
     }
-  }, [typingFocused]);
+
+    const { offsetLeft: charOffsetLeft } = charRef.current;
+    setCaretPos({
+      x: wordOffsetLeft + charOffsetLeft,
+      y: wordOffsetTop - wordsOffset,
+    });
+  }, [wordIndex, charIndex, wordsOffset, firstWord, wordRef, charRef, lineHeight]);
 
   useEffect(() => {
-    if (resultPreview === null) {
-      setTypemodeVisible(true);
-    } else {
-      setTypemodeVisible(false);
-    }
-  }, [resultPreview]);
+    setCharWidth(charRef.current?.clientWidth || 0);
+  }, [lineHeight]);
+
+  const sizingStyle = (
+    caretStyle === 'line'
+      ? {
+          width: charWidth / 9,
+          height: lineHeight - fontSize * 0.4,
+          left: 0,
+          top: 1,
+        }
+      : caretStyle === 'underline'
+      ? { width: charWidth, height: lineHeight / 30, left: 1, top: lineHeight - fontSize * 0.4 - 2 }
+      : caretStyle === 'block'
+      ? {
+          width: charWidth,
+          height: lineHeight * 0.6,
+          left: 0,
+          top: fontSize * 0.2,
+        }
+      : {}
+  ) as React.CSSProperties;
 
   return (
-    <TypingContext.Provider
-      value={{
-        typingStarted,
-        typingFocused,
-        typingDisabled,
-        resultPreview,
-        lineHeight,
-        typemodeVisible,
-        setTypemodeVisible,
-        onTypingStarted,
-        onTypingEnded,
-        onTypingDisable,
-        onTypingAllow,
-        onPreviewResult,
-        onUpdateTypingFocus,
-        setLineHeight,
+    <div
+      className={`${styles.caret} ${styles[`caret--${caretStyle}`]} ${
+        smoothCaret ? styles.smooth : ''
+      } ${
+        !typingStarted
+          ? smoothCaret
+            ? styles['blink-smooth']
+            : styles['blink']
+          : ''
+      } ${className || ''}`}
+      style={{
+        transform: `translate(${caretPos.x}px, ${caretPos.y}px)`,
+        ...sizingStyle,
       }}
-    >
-      {children}
-    </TypingContext.Provider>
+    />
   );
-};
-
-export { TypingContext, TypingContextProvider };
+}
