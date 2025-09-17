@@ -1,114 +1,129 @@
-"use client";
+import { useContext, useEffect, useRef, useState } from 'react';
+import { TypingContext } from '@/context/typing.context';
+import { ProfileContext } from '@/context/profile.context';
+import { TypingWords } from '../types';
+import Caret from './Caret';
+import styles from './Input.module.scss';
 
-import { useState } from "react"
-import { CardContent, Card } from "../ui/card";
-import { BookIcon, StarIcon } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
-import { useTRPC } from "@/trpc/client";
-import { toast } from "sonner";
-import z from "zod";
-import { Button } from "../ui/button";
+interface Props {
+  words: TypingWords;
+  wordIndex: number;
+  charIndex: number;
+}
 
-export default function Typingsetting() {
+export default function Input(props: Props) {
+  const { words, wordIndex, charIndex } = props;
 
-    const [time, settime] = useState<number>(15);
-    const [mode, setmode] = useState<"Story" | "Affirmation">("Affirmation");
-    const [response, setResponse] = useState<any>(null);
+  const { typingStarted, typingFocused, lineHeight, setLineHeight } =
+    useContext(TypingContext);
+  const { profile } = useContext(ProfileContext);
+  const [wordsOffset, setWordsOffset] = useState(0);
 
-    const times = [15, 30, 60, 90, 120];
-    const modes = ["Story", "Affirmation"];
+  const wordWrapperRef = useRef<HTMLDivElement>(null);
+  const wordRef = useRef<HTMLDivElement>();
+  const charRef = useRef<HTMLSpanElement>();
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
 
-    const trpc = useTRPC();
+  useEffect(() => {
+    if (typingStarted) hiddenInputRef.current?.focus();
+  }, [typingStarted]);
 
-    const modeSchema = z.enum(["Story", "Affirmation"]);
-    type modeschema = z.infer<typeof modeSchema>;
+  useEffect(() => {
+    if (!wordWrapperRef.current) return;
+    const { offsetTop, clientHeight } = wordWrapperRef.current;
+    setWordsOffset(Math.max(offsetTop - clientHeight, 0));
+  }, [charIndex]);
 
-    console.log(time);
-    console.log(mode);
+  const firstWord = words[0]?.chars.join('');
 
-    const typingresponse = useMutation(trpc.typingResponse.typingsendmessage.mutationOptions({
-        onSuccess: (data) => {
-            console.log("Typing settings saved:", data);
-            toast.success("Typing settings saved!" + data);
-        },
+  useEffect(() => {
+    setLineHeight((state) => wordWrapperRef.current?.clientHeight || state);
 
-        onError: (error: any) => {
-            console.error("Error saving typing settings:", error);
-        }
-    }));
-
-    const handletypingresponsesubmit = async (data: { mode: modeschema, time: number }) => {
-        try {
-            console.log("Handletypingresponse is called : ", data);
-            const result = await typingresponse.mutateAsync(data);
-            console.log("Result from typing response mutation : ", result);
-            toast.success("Typing response generated successfully! : " + result.typingResponse);
-            setResponse(result.typingResponse);
-            return result.typingResponse;
+    const interval = setInterval(function () {
+      setLineHeight((state) => {
+        if (state === 0 || wordWrapperRef.current?.clientHeight !== state) {
+          return wordWrapperRef.current?.clientHeight || state;
         }
 
-        catch (error) {
-            console.error("Error in handletypingresponse:", error);
-            const errorMessage = error instanceof Error ? error.message : "Unknown error";
-            toast.error("Error in handletypingresponse: " + errorMessage);
-        }
-    }
+        clearInterval(interval);
+        return state;
+      });
+    }, 200);
 
-    return (
-        <div className="min-h-screen flex flex-col items-center justify-start pt-12 px-4">
-            {/* Card Component at Top Center */}
-            <div className="w-full max-w-4xl mb-8">
-                <Card className="m-0 p-0 bg-transparent border-0 shadow-2xl">
-                    <CardContent className="flex gap-1 justify-center items-center flex-wrap">
-                        {times.map((t) => {
-                            return (
-                                <div className="cursor-pointer" key={t}>
-                                    <div className={"p-2 text-muted-foreground text-sm scale-100 hover:scale-110 hover:text-primary ease-in-out duration-200 cursor-pointer" +
-                                        (time === t ? " text-primary font-bold " : "")
-                                    } onClick={() => settime(t)}>
-                                        {t}
-                                    </div>
-                                </div>
-                            )
-                        })}
-                        <div className="text-muted-foreground opacity-35 text-center 
-                         flex items-center justify-center font-extrabold text-xl mx-4"> |</div>
-                        {modes.map((m) => {
-                            return (
-                                <div className="flex gap-2" key={m}>
-                                    <div className={"p-2 text-muted-foreground text-sm scale-100 hover:scale-110 hover:text-primary ease-in-out duration-200 cursor-pointer" +
-                                        (mode === m ? " text-primary font-bold " : "")
-                                    } onClick={() => setmode(m as typeof mode)}>
-                                        <span className="flex items-center gap-2">
-                                            {m === "Affirmation" ? <BookIcon className="w-4 h-4" /> : <StarIcon className="w-4 h-4" />}
-                                            {m}
-                                        </span>
-                                    </div>
-                                </div>
-                            )
-                        })}
+    return () => {
+      clearInterval(interval);
+    };
+  }, [profile.customize.fontSize]);
 
-                        <div className="ml-6">
-                            <Button 
-                                onClick={() => { handletypingresponsesubmit({ mode: mode as modeschema, time: time }); }} 
-                                className="bg-primary text-primary-foreground hover:bg-primary/90"
-                                disabled={typingresponse.isPending}
-                            >
-                                {typingresponse.isPending ? "Loading..." : "Generate"}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+  return (
+    <div className={styles.wrapper} style={{ height: lineHeight * 3 }}>
+      {words.length !== 0 && profile.customize.caretStyle !== 'off' && (
+        <Caret
+          lineHeight={lineHeight}
+          wordIndex={wordIndex}
+          charIndex={charIndex}
+          wordsOffset={wordsOffset}
+          firstWord={firstWord}
+          wordRef={wordRef}
+          charRef={charRef}
+        />
+      )}
+
+      <input
+        type="text"
+        className={`${styles['hidden-input']} ${
+          typingFocused ? styles['hidden-input--nocursor'] : ''
+        }`}
+        autoCapitalize="off"
+        ref={hiddenInputRef}
+        tabIndex={-1}
+      />
+      <div
+        className={styles.words}
+        style={{
+          transform: typingStarted
+            ? `translateY(-${wordsOffset}px)`
+            : undefined,
+          fontSize: profile.customize.fontSize,
+        }}
+      >
+        {words.map((word, index) => {
+          const isCurrentWord = index === wordIndex;
+
+          return (
+            <div
+              key={index}
+              className={styles.wordWrapper}
+              ref={isCurrentWord ? wordWrapperRef : undefined}
+            >
+              <div
+                className={`${styles.word} ${
+                  word.isIncorrect ? styles.wordIncorrect : ''
+                }`}
+                ref={(node) => {
+                  if (isCurrentWord) wordRef.current = node || undefined;
+                }}
+              >
+                {word.chars.map((char, index) => (
+                  <span
+                    key={index}
+                    className={`${styles.char} ${
+                      char.type !== 'none' ? styles[`char--${char.type}`] : ''
+                    }`}
+                    ref={(node) => {
+                      if (isCurrentWord && index === charIndex) {
+                        charRef.current = node || undefined;
+                      }
+                    }}
+                  >
+                    {char.content}
+                  </span>
+                ))}
+              </div>
             </div>
-
-            {/* Response Text in Center */}
-            <div className="w-full max-w-4xl flex justify-center items-center">
-                <div className="text-center max-w-3xl">
-                    <p className="text-muted-foreground text-lg md:text-xl lg:text-2xl leading-relaxed">
-                        {response ? response : "Click generate to get your personalized typing content"}
-                    </p>
-                </div>
-            </div>
-        </div>
-    )
+          );
+        })}
+      </div>
+    </div>
+  );
 }

@@ -1,0 +1,80 @@
+/* Input.module.css */
+.wrapper {
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hiddenInput {
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+}
+
+.hiddenInputNocursor {
+  caret-color: transparent;
+}
+
+.words {
+  position: relative;
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 500;
+  line-height: 1.8;
+  transition: transform 0.3s ease;
+  color: hsl(var(--muted-foreground));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.wordWrapper {
+  position: relative;
+}
+
+.word {
+  display: inline-block;
+  position: relative;
+}
+
+.wordIncorrect {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-radius: 0.25rem;
+}
+
+.char {
+  position: relative;
+  transition: all 0.1s ease;
+}
+
+.charCorrect {
+  color: hsl(var(--foreground));
+}
+
+.charIncorrect {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.2);
+}
+
+.charExtra {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.3);
+  border-radius: 0.125rem;
+}
+
+.caret {
+  position: absolute;
+  width: 2px;
+  background-color: hsl(var(--primary));
+  border-radius: 1px;
+  transition: all 0.1s ease;
+  z-index: 10;
+}
+
+.caretVisible {
+  opacity: 1;
+}
+
+.caretHidden {
+  opacity: 0;
+}
