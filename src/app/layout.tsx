@@ -6,6 +6,8 @@ import { TRPCReactProvider } from "@/trpc/client";
 import { ThemeProvider } from "@/components/theme-provider"
 import Sidebar from "@/components/sidebar";
 import ThemeToggle from "@/components/ThemeToggle";
+import { TypingProvider } from "@/context/typing.context";
+import { ProfileProvider } from "@/context/profile.context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,8 +41,12 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {/* <ThemeToggle /> */}
-            {children}
+            <ProfileProvider>
+              <TypingProvider>
+                {/* <ThemeToggle /> */}
+                {children}
+              </TypingProvider>
+            </ProfileProvider>
           </ThemeProvider>
           {/* <Sidebar /> */}
           <Toaster />
