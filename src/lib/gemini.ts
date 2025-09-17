@@ -151,7 +151,7 @@ export async function generateText(userId: string, userMessage: string, conversa
 export async function generatetypingtext(mode: "Story" | "Affirmation", time: number): Promise<string> {
   try {
     const model = genAi.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-flash-lite",
     });
 
     const targetWords = Math.max(50, Math.floor((time * 80) / 60));
