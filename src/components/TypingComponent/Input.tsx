@@ -2,6 +2,8 @@ import { TypingWords } from "@/hooks/types";
 import { useContext, useEffect, useRef, useState } from "react";
 import { TypingContext } from "./context/typingContext";
 import Caret from "./Caret";
+import { cn } from "@/lib/utils";
+import styles from './Input.module.css';
 
 interface props {
     words: TypingWords;
@@ -73,9 +75,50 @@ export default function Input(props: props) {
                 />
             )}
 
+            <input
+                type="text"
+                className={cn("absolute top-0 right-0 bottom-0 left-0 opacity-0 z-2 select-none text-lg cursor-default", typingFocused ? "cursor-none" : "")}
+                autoCapitalize="off"
+                ref={hiddenInputRef}
+                tabIndex={-1}
+            />
+            <div className="flex flex-wrap select-none duration-75"
+                style={{ transform: typingStarted ? `translateY(-${wordsOffset}px)` : undefined }}>
+                {words.map((word, index) => {
+                    const isCurrentWord = index === wordIndex;
 
+                    return (
+                        <div
+                            key={index}
+                            className="overflow-hidden relative"
+                            ref={isCurrentWord ? wordWrapperRef : undefined}
+                        >
+                            <div
+                                className={cn("flex flex-wrap select-none duration-75", word.isIncorrect ? styles.wordIncorrect : '')}
+                                ref={(node) => {
+                                    if (isCurrentWord && node) wordRef.current = node;
+                                }}
+                            >
+                                {word.chars.map((char, index) => (
+                                    <span
+                                        key={index}
+                                        className={`${styles.char} ${char.type !== 'none' ? styles[`char${char.type.charAt(0).toUpperCase() + char.type.slice(1)}`] : ''
+                                            }`}
+                                        ref={(node) => {
+                                            if (isCurrentWord && index === charIndex && node) {
+                                                charRef.current = node;
+                                            }
+                                        }}
+                                    >
+                                        {char.content}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
 
-            <input type="text" className="absolute top-0 right-0 bottom-0 left-0 opacity-0 z-2 select-none text-lg cursor-default" />
+            </div>
 
         </div>
     )
