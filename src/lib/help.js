@@ -1,60 +1,114 @@
-// Generate typing text for practice
-export async function generatetypingtext(mode: "story" | "affirmation", timeLimit: number): Promise<string> {
-  try {
-    const model = genAi.getGenerativeModel({ model: "gemini-pro" });
+"use client";
 
-    // Calculate approximate word count based on time (assuming 40 WPM average)
-    const targetWords = Math.max(50, Math.floor((timeLimit * 40) / 60));
-    
-    let prompt: string;
-    
-    if (mode === "story") {
-      prompt = `Generate a ${targetWords}-word engaging short story suitable for typing practice. 
-      The story should be:
-      - Interesting and motivational
-      - Use common, everyday vocabulary (avoid complex technical terms)
-      - Include a good mix of punctuation (periods, commas, apostrophes, quotation marks)
-      - Use varied sentence lengths (mix of short and medium sentences)
-      - Include contractions naturally (don't, can't, it's, won't)
-      - Feature both uppercase and lowercase letters in natural contexts
-      - Include numbers when they fit naturally in the story
-      - Flow naturally for typing practice without awkward phrasing
-      - Avoid excessive repetition of the same words
-      - Be exactly ${targetWords} words
-      
-      Create content that helps practice different typing skills while remaining engaging.
-      Just return the story text without any formatting or extra explanation.`;
-    } else {
-      prompt = `Generate ${targetWords} words of positive affirmations and motivational content for typing practice.
-      The content should be:
-      - Uplifting and encouraging
-      - Use simple, clear everyday language
-      - Include proper punctuation (periods, commas, apostrophes)
-      - Use varied sentence lengths for good typing rhythm
-      - Include contractions naturally (you're, I'm, we'll, don't)
-      - Flow well for typing practice with natural phrasing
-      - Include both positive statements and actionable advice
-      - Avoid repetitive phrases or words
-      - Be exactly ${targetWords} words
-      
-      Format as flowing paragraphs of affirmations and motivational thoughts.
-      Just return the text without any formatting or extra explanation.`;
+import { useState } from "react"
+import { CardContent, Card } from "../ui/card";
+import { BookIcon, StarIcon } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
+import { toast } from "sonner";
+import z from "zod";
+import { Button } from "../ui/button";
+
+export default function Typingsetting() {
+
+    const [time, settime] = useState<number>(15);
+    const [mode, setmode] = useState<"Story" | "Affirmation">("Affirmation");
+    const [response, setResponse] = useState<any>(null);
+
+    const times = [15, 30, 60, 90, 120];
+    const modes = ["Story", "Affirmation"];
+
+    const trpc = useTRPC();
+
+    const modeSchema = z.enum(["Story", "Affirmation"]);
+    type modeschema = z.infer<typeof modeSchema>;
+
+    console.log(time);
+    console.log(mode);
+
+    const typingresponse = useMutation(trpc.typingResponse.typingsendmessage.mutationOptions({
+        onSuccess: (data) => {
+            console.log("Typing settings saved:", data);
+            toast.success("Typing settings saved!" + data);
+        },
+
+        onError: (error: any) => {
+            console.error("Error saving typing settings:", error);
+        }
+    }));
+
+    const handletypingresponsesubmit = async (data: { mode: modeschema, time: number }) => {
+        try {
+            console.log("Handletypingresponse is called : ", data);
+            const result = await typingresponse.mutateAsync(data);
+            console.log("Result from typing response mutation : ", result);
+            toast.success("Typing response generated successfully! : " + result.typingResponse);
+            setResponse(result.typingResponse);
+            return result.typingResponse;
+        }
+
+        catch (error) {
+            console.error("Error in handletypingresponse:", error);
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            toast.error("Error in handletypingresponse: " + errorMessage);
+        }
     }
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text().trim();
-    
-    // Basic validation
-    const wordCount = text.split(/\s+/).length;
-    if (wordCount < targetWords * 0.8 || wordCount > targetWords * 1.2) {
-      console.warn(`Generated text has ${wordCount} words, target was ${targetWords}`);
-    }
-    
-    return text;
-    
-  } catch (error) {
-    console.error("Error generating typing text:", error);
-    throw new Error("Failed to generate typing content. Please check your API configuration.");
-  }
+    return (
+        <div className="min-h-screen flex flex-col items-center justify-start pt-12 px-4">
+            {/* Card Component at Top Center */}
+            <div className="w-full max-w-4xl mb-8">
+                <Card className="m-0 p-0 bg-transparent border-0 shadow-2xl">
+                    <CardContent className="flex gap-1 justify-center items-center flex-wrap">
+                        {times.map((t) => {
+                            return (
+                                <div className="cursor-pointer" key={t}>
+                                    <div className={"p-2 text-muted-foreground text-sm scale-100 hover:scale-110 hover:text-primary ease-in-out duration-200 cursor-pointer" +
+                                        (time === t ? " text-primary font-bold " : "")
+                                    } onClick={() => settime(t)}>
+                                        {t}
+                                    </div>
+                                </div>
+                            )
+                        })}
+                        <div className="text-muted-foreground opacity-35 text-center 
+                         flex items-center justify-center font-extrabold text-xl mx-4"> |</div>
+                        {modes.map((m) => {
+                            return (
+                                <div className="flex gap-2" key={m}>
+                                    <div className={"p-2 text-muted-foreground text-sm scale-100 hover:scale-110 hover:text-primary ease-in-out duration-200 cursor-pointer" +
+                                        (mode === m ? " text-primary font-bold " : "")
+                                    } onClick={() => setmode(m as typeof mode)}>
+                                        <span className="flex items-center gap-2">
+                                            {m === "Affirmation" ? <BookIcon className="w-4 h-4" /> : <StarIcon className="w-4 h-4" />}
+                                            {m}
+                                        </span>
+                                    </div>
+                                </div>
+                            )
+                        })}
+
+                        <div className="ml-6">
+                            <Button 
+                                onClick={() => { handletypingresponsesubmit({ mode: mode as modeschema, time: time }); }} 
+                                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                                disabled={typingresponse.isPending}
+                            >
+                                {typingresponse.isPending ? "Loading..." : "Generate"}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Response Text in Center */}
+            <div className="w-full max-w-4xl flex justify-center items-center">
+                <div className="text-center max-w-3xl">
+                    <p className="text-muted-foreground text-lg md:text-xl lg:text-2xl leading-relaxed">
+                        {response ? response : "Click generate to get your personalized typing content"}
+                    </p>
+                </div>
+            </div>
+        </div>
+    )
 }

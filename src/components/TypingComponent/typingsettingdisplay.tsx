@@ -13,6 +13,7 @@ export default function Typingsetting() {
 
     const [time, settime] = useState<number>(15);
     const [mode, setmode] = useState<"Story" | "Affirmation">("Affirmation");
+    const [response, setResponse] = useState<any>(null);
 
     const times = [15, 30, 60, 90, 120];
     const modes = ["Story", "Affirmation"];
@@ -33,40 +34,40 @@ export default function Typingsetting() {
 
         onError: (error: any) => {
             console.error("Error saving typing settings:", error);
-            toast.error("Error saving typing settings: " + error.message);
         }
     }));
 
-    const handletypingresponsesubmit = async (data: { mode: modeschema , time: number }) => {
-        try{
-        console.log("Handletypingresponse is called : ", data);
-        const result = await typingresponse.mutateAsync(data);
-        console.log("Result from typing response mutation : ", result);
-        toast.success("Typing response generated successfully! : " + result);
-        return result ;
+    const handletypingresponsesubmit = async (data: { mode: modeschema, time: number }) => {
+        try {
+            console.log("Handletypingresponse is called : ", data);
+            const result = await typingresponse.mutateAsync(data);
+            console.log("Result from typing response mutation : ", result);
+            toast.success("Typing response generated successfully! : " + result.typingResponse);
+            setResponse(result.typingResponse);
+            return result.typingResponse;
         }
 
-        catch(error){ 
+        catch (error) {
             console.error("Error in handletypingresponse:", error);
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
             toast.error("Error in handletypingresponse: " + errorMessage);
         }
 
-       
+
 
     }
 
     return (
         <>
-            <div className="fixed top-30 left-[37%]">
-                <div className="flex justify-start items-start">
-                    <Card className="m-0 p-0 bg-transparent border-0 shadow-2xl">
-                        <CardContent className="flex gap-1">
+            <div className="flex max-h-screen flex-col items-center justify-start pt-20 px-4 ">
+                <div className=" w-full max-w-4xl mb-8 fixed top-[20%]">
+                    <Card className="m-0 p-0 bg-transparent border-0 shadow-none">
+                        <CardContent className="flex gap-1 justify-center items-center flex-wrap">
                             {times.map((t) => {
                                 return (
-                                    <div className="cursor-pointer">
+                                    <div className="cursor-pointer" key={t}>
 
-                                        <div key={(t)} className={"p-2 text-muted-foreground text-sm scale-100 hover:scale-120 hover:text-primary ease-in-out duration-200 cursor-pointer" +
+                                        <div className={"p-2 text-muted-foreground text-sm scale-100 hover:scale-120 hover:text-primary ease-in-out duration-200 cursor-pointer" +
                                             (time === t ? " text-primary font-bold " : "")
                                         } onClick={() => settime(t)}>
 
@@ -94,13 +95,27 @@ export default function Typingsetting() {
                             })}
 
                             <div className="text-muted-foreground opacity-35 text-center">
-                                <Button onClick={() => handletypingresponsesubmit({ mode: mode as modeschema, time: time })} className="ml-4 bg-primary text-primary-foreground hover:bg-primary/90">
-                                    Click me to test 
+                                <Button onClick={() => { handletypingresponsesubmit({ mode: mode as modeschema, time: time }); }} className="ml-4 bg-primary text-primary-foreground hover:bg-primary/90">
+                                    Click me to test
                                 </Button>
+
+
+
                             </div>
 
                         </CardContent>
                     </Card>
+
+
+
+
+                </div>
+                <div className="w-full max-w-4xl flex justify-center items-center">
+                    <div className="text-center max-w-3xl">
+                        <p className="text-muted-foreground text-lg md:text-xl lg:text-2xl leading-relaxed">
+                            {response ? response : "Click generate to get your personalized typing content"}
+                        </p>
+                    </div>
                 </div>
             </div>
         </>

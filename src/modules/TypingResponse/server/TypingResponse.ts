@@ -26,9 +26,7 @@ export const typingrouter = createTRPCRouter({
             const typingResponse = await generatetypingtext(input.mode, input.time);
 
             return {
-                typingResponse,
-                mode: input.mode,
-                time: input.time,
+                typingResponse
             }
         })
 
