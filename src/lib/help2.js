@@ -23,9 +23,6 @@ const inputStyles = {
 };
 
 export default function TypingWithSettings() {
-    const [time, settime] = useState<number>(15);
-    const [mode, setmode] = useState<"Story" | "Affirmation">("Affirmation");
-    const [response, setResponse] = useState<any>(null);
     const [isFocused, setIsFocused] = useState(false);
 
     // Typing state management
