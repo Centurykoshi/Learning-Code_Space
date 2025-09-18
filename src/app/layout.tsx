@@ -1,11 +1,14 @@
+import React from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { TRPCReactProvider } from "@/trpc/client";
 import { ThemeProvider } from "@/components/theme-provider"
-import Sidebar from "@/components/sidebar";
-import ThemeToggle from "@/components/ThemeToggle";
+import { Provider } from 'react-redux'
+import { store } from "@/components/TypingComponent/ReduxLearning/store";
+import { ClientProviders } from "@/components/Providers/client-providers";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,24 +31,31 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+
     <TRPCReactProvider>
       <html lang="en">
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
+
+
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
             enableSystem
             disableTransitionOnChange
           >
-            {/* <ThemeToggle /> */}
-            {children}
+            <ClientProviders>
+              {/* <ThemeToggle /> */}
+              {children}
+            </ClientProviders>
           </ThemeProvider>
+
           {/* <Sidebar /> */}
           <Toaster />
         </body>
       </html>
     </TRPCReactProvider>
+
   );
 }
