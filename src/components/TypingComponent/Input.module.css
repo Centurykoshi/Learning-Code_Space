@@ -1,0 +1,54 @@
+.char {
+    display: inline-block;
+    border-left: 1px solid transparent;
+    position: relative;
+    color: #6b7280;
+    /* Default gray color for untyped text */
+    font-size: 1.5rem;
+    line-height: 1.6;
+}
+
+.charCorrect {
+    color: #22c55e !important;
+    background-color: transparent;
+}
+
+.charIncorrect {
+    color: #ef4444 !important;
+    background-color: rgba(239, 68, 68, 0.2);
+}
+
+.charExtra {
+    color: #f59e0b !important;
+    background-color: rgba(245, 158, 11, 0.2);
+}
+
+.wordIncorrect {
+    position: relative;
+}
+
+.wordIncorrect::after {
+    content: '';
+    position: absolute;
+    bottom: 1px;
+    display: block;
+    width: 100%;
+    height: 2px;
+    background-color: #ef4444;
+    transform: scaleX(0);
+    transform-origin: left;
+    opacity: 0.75;
+    animation: line 400ms;
+    animation-fill-mode: forwards;
+}
+
+@keyframes line {
+    to {
+        transform: scaleX(1);
+    }
+}
+
+.word {
+    margin-right: 0.5rem;
+    position: relative;
+}

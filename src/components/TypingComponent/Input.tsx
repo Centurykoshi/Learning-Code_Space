@@ -62,7 +62,12 @@ export default function Input(props: props) {
     // }, [profile.customize.fontSize]);
 
     return (
-        <div className="overflow-hidden relative" style={{ height: lineHeight * 3 || '1.5rem' }}>
+        <div className="overflow-hidden relative min-h-[6rem] bg-gray-50 dark:bg-gray-900 p-4 rounded-lg" style={{ height: lineHeight * 3 || 'auto' }}>
+            {/* Debug info */}
+            <div className="text-xs text-gray-500 mb-2">
+                Input Debug: {words.length} words, Word {wordIndex + 1}, Char {charIndex + 1}
+            </div>
+
             {words.length !== 0 && (
                 <Caret
                     lineHeight={lineHeight}
@@ -82,7 +87,7 @@ export default function Input(props: props) {
                 ref={hiddenInputRef}
                 tabIndex={-1}
             />
-            <div className="flex flex-wrap select-none duration-75"
+            <div className="flex flex-wrap select-none duration-75 text-2xl leading-relaxed"
                 style={{ transform: typingStarted ? `translateY(-${wordsOffset}px)` : undefined }}>
                 {words.map((word, index) => {
                     const isCurrentWord = index === wordIndex;
@@ -90,11 +95,11 @@ export default function Input(props: props) {
                     return (
                         <div
                             key={index}
-                            className="overflow-hidden relative"
+                            className="overflow-hidden relative mr-2"
                             ref={isCurrentWord ? wordWrapperRef : undefined}
                         >
                             <div
-                                className={cn("flex flex-wrap select-none duration-75", word.isIncorrect ? styles.wordIncorrect : '')}
+                                className={cn("flex select-none duration-75", word.isIncorrect ? styles.wordIncorrect : '')}
                                 ref={(node) => {
                                     if (isCurrentWord && node) wordRef.current = node;
                                 }}
