@@ -19,14 +19,10 @@ export default function Input(props: props) {
 
     const [wordsOffset, setWordsOffset] = useState(0);
 
-
     const wordWrapperRef = useRef<HTMLDivElement>(null);
-    const wordRef = useRef<HTMLDivElement>(undefined);
-    const charRef = useRef<HTMLSpanElement>(undefined);
+    const wordRef = useRef<HTMLDivElement>();
+    const charRef = useRef<HTMLSpanElement>();
     const hiddenInputRef = useRef<HTMLInputElement>(null);
-
-    const secondCaretWordRef = useRef<HTMLDivElement>(null);
-    const secondCaretCharRef = useRef<HTMLSpanElement>(null);
 
     useEffect(() => {
         if (typingStarted) hiddenInputRef.current?.focus();
@@ -42,32 +38,26 @@ export default function Input(props: props) {
 
     const firstWord = words[0]?.chars.join('');
 
-    // useEffect(() => {
-    //     setLineHeight((state) => wordWrapperRef.current?.offsetHeight || state);
+    useEffect(() => {
+        setLineHeight((state) => wordWrapperRef.current?.clientHeight || state);
 
-    //     const interval = setInterval(function () {
-    //         setLineHeight((state) => {
-    //             if (state === 0 || wordWrapperRef.current?.offsetHeight !== state) {
-    //                 return wordWrapperRef.current?.offsetHeight || state;
-    //             }
+        const interval = setInterval(() => {
+            setLineHeight((state) => {
+                if (state === 0 || wordWrapperRef.current?.clientHeight !== state) {
+                    return wordWrapperRef.current?.clientHeight || state;
+                }
 
-    //             clearInterval(interval);
-    //             return state;
-    //         });
-    //     }, 200);
+                clearInterval(interval);
+                return state;
+            });
+        }, 200);
 
-    //     return () => {
-    //         clearInterval(interval);
-    //     };
-    // }, [profile.customize.fontSize]);
+        return () => clearInterval(interval);
+    }, [setLineHeight]); // no dependencies, runs only on mount
+
 
     return (
-        <div className="overflow-hidden relative min-h-[6rem] bg-gray-50 dark:bg-gray-900 p-4 rounded-lg" style={{ height: lineHeight * 3 || 'auto' }}>
-            {/* Debug info */}
-            <div className="text-xs text-gray-500 mb-2">
-                Input Debug: {words.length} words, Word {wordIndex + 1}, Char {charIndex + 1}
-            </div>
-
+        <div className="overflow-hidden  p-4 rounded-lg " style={{ height: lineHeight * 3 || 'auto' }}>
             {words.length !== 0 && (
                 <Caret
                     lineHeight={lineHeight}
@@ -86,23 +76,27 @@ export default function Input(props: props) {
                 autoCapitalize="off"
                 ref={hiddenInputRef}
                 tabIndex={-1}
+                spellCheck={false}
+                autoComplete="off"
             />
-            <div className="flex flex-wrap select-none duration-75 text-2xl leading-relaxed"
+            <div className="flex flex-wrap select-none duration-75 "
                 style={{ transform: typingStarted ? `translateY(-${wordsOffset}px)` : undefined }}>
+
                 {words.map((word, index) => {
                     const isCurrentWord = index === wordIndex;
 
                     return (
                         <div
                             key={index}
-                            className="overflow-hidden relative mr-2"
+                            className="pl-1 pr-1"
                             ref={isCurrentWord ? wordWrapperRef : undefined}
                         >
                             <div
-                                className={cn("flex select-none duration-75", word.isIncorrect ? styles.wordIncorrect : '')}
+                                className={cn("flex flex-wrap duration-75 relative", word.isIncorrect ? styles.wordIncorrect : '')}
                                 ref={(node) => {
-                                    if (isCurrentWord && node) wordRef.current = node;
+                                    if (isCurrentWord) wordRef.current = node || undefined;
                                 }}
+
                             >
                                 {word.chars.map((char, index) => (
                                     <span
@@ -110,8 +104,8 @@ export default function Input(props: props) {
                                         className={`${styles.char} ${char.type !== 'none' ? styles[`char${char.type.charAt(0).toUpperCase() + char.type.slice(1)}`] : ''
                                             }`}
                                         ref={(node) => {
-                                            if (isCurrentWord && index === charIndex && node) {
-                                                charRef.current = node;
+                                            if (isCurrentWord && index === charIndex) {
+                                                charRef.current = node || undefined;
                                             }
                                         }}
                                     >
