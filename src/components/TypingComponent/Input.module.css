@@ -1,54 +1,74 @@
-.char {
-    display: inline-block;
-    border-left: 1px solid transparent;
-    position: relative;
-    color: #6b7280;
-    /* Default gray color for untyped text */
-    font-size: 1.5rem;
-    line-height: 1.6;
-}
 
-.charCorrect {
-    color: #22c55e !important;
-    background-color: transparent;
-}
 
-.charIncorrect {
-    color: #ef4444 !important;
-    background-color: rgba(239, 68, 68, 0.2);
-}
 
-.charExtra {
-    color: #f59e0b !important;
-    background-color: rgba(245, 158, 11, 0.2);
-}
 
-.wordIncorrect {
-    position: relative;
+.word {
+  position: relative;
+  border-right: 1px solid transparent;
 }
 
 .wordIncorrect::after {
-    content: '';
-    position: absolute;
-    bottom: 1px;
-    display: block;
-    width: 100%;
-    height: 2px;
-    background-color: #ef4444;
-    transform: scaleX(0);
-    transform-origin: left;
-    opacity: 0.75;
-    animation: line 400ms;
-    animation-fill-mode: forwards;
+  content: '';
+  position: absolute;
+  bottom: 1px;
+  display: block;
+  width: 100%;
+  height: 2px;
+  background-color: #ef4444;
+  transform: scaleX(0);
+  transform-origin: left;
+  opacity: 0.75;
+  animation: line 400ms;
+  animation-fill-mode: forwards;
+}
+
+.char {
+  display: inline-block;
+  border-left: 1px solid transparent;
+ color: var(--color-primary);
+ opacity: 70%;  /* default text color */
+  font-size: 1.5rem; /* bigger text */
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.charCorrect {
+  color: var(--color-primary);
+  opacity: 100%; /* green for correct */
+}
+
+.charIncorrect {
+  color: var(--color-destructive); /* red for incorrect */
+}
+
+.charExtra {
+  color: rgb(121, 44, 44);  /* gray for extra */
+}
+
+.hiddenInput {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  z-index: 2;
+  user-select: none;
+  font-size: 1.5rem;
+  cursor: default;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+.hiddenInputNocursor {
+  cursor: none;
 }
 
 @keyframes line {
-    to {
-        transform: scaleX(1);
-    }
-}
-
-.word {
-    margin-right: 0.5rem;
-    position: relative;
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
 }

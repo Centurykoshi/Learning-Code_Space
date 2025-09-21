@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { TypingContext } from "./context/typingContext";
 import { cn } from "@/lib/utils";
-import { transform } from "zod";
+import styles from './caret.module.css';
 
 interface Props {
     lineHeight: number;
@@ -33,7 +33,7 @@ export default function Caret(props: Props) {
     const [CharWidth, setCharWidth] = useState(0);
 
     const caretStyle = 'line';
-    const fontSize = 16;
+    const fontSize = 24; // Match 1.5rem (24px) from CSS
     const smoothCaret = true;
 
     useEffect(() => {
@@ -51,25 +51,35 @@ export default function Caret(props: Props) {
             });
         }
 
-        const { offsetLeft: charOffsetLeft } = charRef.current;
+        const { offsetLeft: charOffsetLeft, offsetWidth: charOffsetWidth } = charRef.current;
         setCaretPostion({
-            x: wordOffsetLeft + charOffsetLeft,
+            x: wordOffsetLeft + charOffsetLeft + charOffsetWidth,
             y: wordOffsetTop - wordsOffset,
         });
     }, [wordIndex, charIndex, wordsOffset, firstWord, wordRef, charRef, lineHeight]);
 
     useEffect(() => {
-        setCharWidth(charRef.current?.clientWidth || 0);
-    }, [lineHeight]);
+        setCharWidth(charRef.current?.offsetWidth || 0);
+    }, [charIndex, wordIndex, lineHeight]);
+
+    const sizingstyle = (
+        caretStyle === "line"? {
+            width: CharWidth /5, 
+            height : lineHeight - fontSize * 0.2,
+            left : 0, 
+            top : 1, 
+        } : {}
+    )as React.CSSProperties;
 
     return (
         <div
             className={cn(
-                "block bg-[var(--clr-caret)] w-0.5 h-8 left-0 top-0.5",
-                smoothCaret && "duration-100"
+                "block bg-[var(--color-muted-foreground)] w-0.5 h-8 left-0 top-0.5 absolute rounded-lg ",
+                smoothCaret && "duration-100", !typingStarted ? smoothCaret ? styles.caretBlinkSmooth : styles.caretBlink: '',
             )}
             style={{
-                transform: `translate(${caretPositon.x}px, ${caretPositon.y}px)`,
+                transform: `translate(${caretPositon.x}px, ${caretPositon.y }px)`,
+                ...sizingstyle,
             }}
         />
     )
