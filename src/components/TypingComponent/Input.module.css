@@ -41,11 +41,10 @@
 }
 
 .charExtra {
-  color: rgb(121, 44, 44);  /* gray for extra */
+  color: var(--color-destructive);  /* gray for extra */
 }
 
 .hiddenInput {
-  position: absolute;
   top: 0;
   right: 0;
   bottom: 0;

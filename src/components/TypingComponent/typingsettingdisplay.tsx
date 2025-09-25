@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useContext, useEffect, useReducer, useState } from "react"
+import { useCallback, useContext, useEffect, useReducer, useState, useMemo } from "react"
 import { CardContent, Card } from "../ui/card";
 import { BookIcon, LockIcon, StarIcon } from "lucide-react";
 import { NotifyOnChangeProps, useMutation } from "@tanstack/react-query";
@@ -25,17 +25,15 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
     const [mode, setmode] = useState<"Story" | "Affirmation">("Affirmation");
     const [response, setResponse] = useState<any>(null);
     const [isCapslock, setisCapslock] = useState(false);
-    const [timeCountdown, settimecountdown] = useState<number>(time);
     const [isLoading, setisLoading] = useState(false);
-    const [TypingWords, setTypingWords] = useState<TypingWords>([]);
+
     const {
         typingDisabled,
         typingStarted,
         typingFocused,
         onUpdateTypingFocus,
         onTypingStarted,
-        onTypingEnded,
-        setTypemodeVisible,
+
     } = useContext(TypingContext);
 
 
@@ -50,8 +48,9 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
     const modeSchema = z.enum(["Story", "Affirmation"]);
     type modeschema = z.infer<typeof modeSchema>;
 
-    console.log(time);
-    console.log(mode);
+    // Remove console.log that causes re-renders
+    // console.log(time);
+    // console.log(mode);
 
     const istypingDisabled = typingDisabled || isLoading;
 
@@ -67,61 +66,62 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
         }
 
         return () => {
-            document.removeEventListener("mousemove", handleMousemove);
+            window.removeEventListener("mousemove", handleMousemove);
         }
-    }, [typingFocused]);
+    }, [typingFocused, onUpdateTypingFocus]);
+
+    const typehandler = useCallback((event: KeyboardEvent) => {
+        const { key } = event;
+
+        if (key === "Escape") {
+            onUpdateTypingFocus(false);
+            return;
+        }
+
+        if (event.getModifierState && event.getModifierState("CapsLock")) {
+            setisCapslock(true);
+        } else {
+            setisCapslock(false);
+        }
+
+        if (event.ctrlKey && key === "Backspace") {
+            onUpdateTypingFocus(true);
+            dispatch({ type: "DELETE_WORD" });
+            return;
+        }
+
+        if (key === "Backspace") {
+            onUpdateTypingFocus(true);
+            dispatch({ type: "DELETE_KEY" });
+            return;
+        }
+
+        if (key === " ") {
+            event.preventDefault();
+            onUpdateTypingFocus(true);
+            dispatch({ type: "NEXT_WORD" });
+            return;
+        }
+
+        if (key.length === 1) {
+            if (!typingStarted) {
+                onTypingStarted();
+            }
+            onUpdateTypingFocus(true);
+            dispatch({ type: "TYPE", payload: key });
+            return;
+        }
+    }, [typingStarted, onTypingStarted, onUpdateTypingFocus, dispatch]);
 
     useEffect(() => {
-        const typehanlder = (event: KeyboardEvent) => {
-            const { key } = event;
-
-            if (key === "Escape") {
-                onUpdateTypingFocus(false);
-            }
-
-            if (event.getModifierState && event.getModifierState("CapsLock")) {
-                setisCapslock(true);
-            }
-            else {
-                setisCapslock(false);
-            }
-
-            if (event.ctrlKey && key === "Backspace") {
-                onUpdateTypingFocus(true);
-                return dispatch({ type: "DELETE_WORD" })
-            }
-
-            if (key === "Backspace") {
-                onUpdateTypingFocus(true);
-                return dispatch({ type: "DELETE_KEY" });
-            }
-            if (key === " ") {
-                event.preventDefault();
-                onUpdateTypingFocus(true);
-                return dispatch({ type: "NEXT_WORD" });
-            }
-            if (key.length === 1) {
-                if (!typingStarted) {
-                    onTypingStarted();
-                }
-                onUpdateTypingFocus(true);
-                return dispatch({ type: "TYPE", payload: key });
-            }
-        };
         if (istypingDisabled) {
-            document.removeEventListener("keydown", typehanlder);
-
+            document.removeEventListener("keydown", typehandler);
         } else {
-            document.addEventListener("keydown", typehanlder);
+            document.addEventListener("keydown", typehandler);
         }
-        return () => document.removeEventListener("keydown", typehanlder);
-    }, [
-        typingStarted,
-        onTypingStarted,
-        mode,
-        time,
-        istypingDisabled,
-    ]);
+
+        return () => document.removeEventListener("keydown", typehandler);
+    }, [istypingDisabled, typehandler]);
 
     useEffect(() => {
         if (response) {
@@ -130,27 +130,6 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
             setisLoading(false);
         }
     }, [response]);
-
-
-    // const onRestart = useCallback(() => {
-    //     onTypingEnded();
-    //     onUpdateTypingFocus(false);
-
-    //     quoteAbortController?.abort();
-    //     quoteAbortController = new AbortController();
-    //     setisLoading(false);
-
-    //     if (response !== null) {
-    //         if (!response) {
-    //             setisLoading(true);
-    //         }
-    //         else {
-    //             const typingresponse = getTypingWords(response.split(" "));
-    //             setisLoading(false);
-
-    //         }
-    //     }
-    // }, [time, mode, response, onTypingEnded, onUpdateTypingFocus]);
 
     useEffect(() => {
         if (typingStarted) {
@@ -161,13 +140,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
         }
     }, [typingStarted])
 
-    // useEffect(() => {
-    //     onRestart();
 
-    //     return () => {
-    //         quoteAbortController?.abort();
-    //     };
-    // }, [onRestart]);
 
     useEffect(() => {
         if (!state.words.length) return;
@@ -179,7 +152,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
         if (state.wordIndex === state.words.length || lastWordCorrect) {
             onUpdateTypingFocus(false);
         }
-    }, [state.words, state.charIndex, state.wordIndex]);
+    }, [state.wordIndex, onUpdateTypingFocus]); // Removed unnecessary dependencies
 
 
 
@@ -198,29 +171,69 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
         }
     }));
 
-    const handletypingresponsesubmit = async (data: { mode: modeschema, time: number }) => {
+    const handletypingresponsesubmit = useCallback(async (data: { mode: modeschema, time: number }) => {
         try {
             console.log("Handletypingresponse is called : ", data);
+            setisLoading(true);
             const result = await typingresponse.mutateAsync(data);
             console.log("Result from typing response mutation : ", result);
-            toast.success("Typing response generated successfully! : " + result.typingResponse);
+            toast.success("Typing response generated successfully!");
 
             const words = getTypingWords(result.typingResponse.split(" "));
             console.log("Converted Words : ", words);
             dispatch({ type: "RESTART", payload: words });
             setResponse(result.typingResponse);
+            setisLoading(false);
             return result.typingResponse;
-        }
-
-        catch (error) {
+        } catch (error) {
             console.error("Error in handletypingresponse:", error);
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
             toast.error("Error in handletypingresponse: " + errorMessage);
+            setisLoading(false);
         }
+    }, [typingresponse, dispatch]);
 
+    // Memoize the button click handler to prevent re-creation on every render
+    const handleGenerateClick = useCallback(() => {
+        handletypingresponsesubmit({ mode: mode as modeschema, time: time });
+    }, [handletypingresponsesubmit, mode, time]);
 
+    // Memoize time selection components
+    const timeSelectionElements = useMemo(() =>
+        times.map((t) => (
+            <div className="cursor-pointer" key={t}>
+                <div
+                    className={"p-2 text-muted-foreground text-sm scale-100 hover:scale-120 hover:text-primary ease-in-out duration-200 cursor-pointer" +
+                        (time === t ? " text-primary font-bold " : "")
+                    }
+                    onClick={() => settime(t)}
+                >
+                    {t}
+                </div>
+            </div>
+        )),
+        [time, times]
+    );
 
-    }
+    // Memoize mode selection components
+    const modeSelectionElements = useMemo(() =>
+        modes.map((m) => (
+            <div className="flex gap-2 " key={m}>
+                <div
+                    className={"p-2 text-muted-foreground text-sm scale-100 hover:scale-120 hover:text-primary ease-in-out duration-200 cursor-pointer" +
+                        (mode === m ? " text-primary font-bold " : "")
+                    }
+                    onClick={() => setmode(m as typeof mode)}
+                >
+                    <span className="flex items-center gap-2">
+                        {m === "Affirmation" ? <BookIcon className="w-4 h-4" /> : <StarIcon className="w-4 h-4" />}
+                        {m}
+                    </span>
+                </div>
+            </div>
+        )),
+        [mode, modes]
+    );
 
     useEffect(() => {
         if (onCaretPostionChange) {
@@ -230,55 +243,29 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
 
     return (
         <>
-            <div className="flex max-h-screen flex-col items-center justify-start pt-20 px-4 ">
-                <div className=" w-full max-w-4xl mb-8 fixed top-[20%]">
+            <div className="flex max-h-screen flex-col items-center justify-start relative ">
+                <div className=" w-full max-w-4xl mb-8 fixed top-[20%] m-0  ">
                     <Card className="m-0 p-0 bg-transparent border-0 shadow-none">
                         <CardContent className="flex gap-1 justify-center items-center flex-wrap">
-                            {times.map((t) => {
-                                return (
-                                    <div className="cursor-pointer" key={t}>
-
-                                        <div className={"p-2 text-muted-foreground text-sm scale-100 hover:scale-120 hover:text-primary ease-in-out duration-200 cursor-pointer" +
-                                            (time === t ? " text-primary font-bold " : "")
-                                        } onClick={() => settime(t)}>
-
-                                            {t}
-                                        </div>
-                                    </div>
-                                )
-                            })}
+                            {timeSelectionElements}
                             <div className="text-muted-foreground opacity-35 text-center 
                              flex items-center justify-center font-extrabold text-xl "> |</div>
-                            {modes.map((m) => {
-                                return (
-                                    <div className="flex gap-2 " key={m}>
-
-                                        <div className={"p-2 text-muted-foreground text-sm scale-100 hover:scale-120 hover:text-primary ease-in-out duration-200 cursor-pointer" +
-                                            (mode === m ? " text-primary font-bold " : "")
-                                        } onClick={() => setmode(m as typeof mode)}>
-                                            <span className="flex items-center gap-2">
-                                                {m === "Affirmation" ? <BookIcon className="w-4 h-4" /> : <StarIcon className="w-4 h-4" />}
-                                                {m}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )
-                            })}
+                            {modeSelectionElements}
 
                             <div className="text-muted-foreground opacity-35 text-center">
-                                <Button onClick={() => { handletypingresponsesubmit({ mode: mode as modeschema, time: time }); }} className="ml-4 bg-primary text-primary-foreground hover:bg-primary/90">
-                                    Click me to test
+                                <Button
+                                    onClick={handleGenerateClick}
+                                    className="ml-4 bg-primary text-primary-foreground hover:bg-primary/90"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? "Generating..." : "Generate Content"}
                                 </Button>
-
-
-
                             </div>
-
                         </CardContent>
                     </Card>
 
-                    <div className="relative outline-0 h-max  ">
-                        <div className="text-center max-w-5xl">
+                    <div className="relative flex justify-center items-center min-h-[60vh] ">
+                        <div className="text-center  max-w-7xl">
                             {isCapslock && (
                                 <div className="flex items-center bg-primary color-primary-foreground 
                                 px-4 py-2 border-r-0 absolute top-[-35] left-[50%] transform -translate-x-1/2
@@ -292,11 +279,11 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
                                     words={state.words}
                                     wordIndex={state.wordIndex}
                                     charIndex={state.charIndex}
+                                    fontSize={24}
                                 />
                             ) : (
                                 <p className="text-muted-foreground leading-relaxed">
                                     Click generate to get your personalized typing content
-
                                 </p>
                             )}
 
