@@ -2,7 +2,7 @@ import { TypingWords } from "@/hooks/types";
 import { start } from "./Actions/startaction";
 import { type } from "./Actions/typeaction";
 import { nextWord } from "./Actions/nextWordAction";
-import { deleteKeyAction } from "./Actions/deletekey.action";
+import deleteKey from "./Actions/deletekey.action";
 import { deleteWord } from "./Actions/deleteword";
 import { addwords } from "./Actions/addwords";
 import { restart } from "./Actions/restartaction";
@@ -53,7 +53,7 @@ export default function typingReducer(
         case 'NEXT_WORD':
             return nextWord(state);
         case 'DELETE_KEY':
-            return deleteKeyAction(state);
+            return deleteKey(state);
         case 'DELETE_WORD':
             return deleteWord(state);
         case 'ADD_WORDS':

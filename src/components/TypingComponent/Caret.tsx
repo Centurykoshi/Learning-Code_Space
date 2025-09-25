@@ -36,6 +36,17 @@ export default function Caret(props: Props) {
     const fontSize = 24; // Match 1.5rem (24px) from CSS
     const smoothCaret = true;
 
+
+    const sizingstyle = (
+        caretStyle === "line" ? {
+            width: CharWidth / 7,
+            height: 36 - fontSize * 0.2,
+            left: 0,
+            top: 1,
+        } : {}
+    ) as React.CSSProperties;
+
+
     useEffect(() => {
         if (!wordRef.current) return;
         const {
@@ -47,7 +58,7 @@ export default function Caret(props: Props) {
         if (!charRef.current) {
             return setCaretPostion({
                 x: wordOffsetLeft + wordOffsetWidth,
-                y: wordOffsetTop - wordsOffset,
+                y: wordOffsetTop + wordsOffset,
             });
         }
 
@@ -60,25 +71,17 @@ export default function Caret(props: Props) {
 
     useEffect(() => {
         setCharWidth(charRef.current?.offsetWidth || 0);
-    }, [charIndex, wordIndex, lineHeight]);
+    }, [lineHeight]);
 
-    const sizingstyle = (
-        caretStyle === "line"? {
-            width: CharWidth /5, 
-            height : lineHeight - fontSize * 0.2,
-            left : 0, 
-            top : 1, 
-        } : {}
-    )as React.CSSProperties;
 
     return (
         <div
             className={cn(
                 "block bg-[var(--color-muted-foreground)] w-0.5 h-8 left-0 top-0.5 absolute rounded-lg ",
-                smoothCaret && "duration-100", !typingStarted ? smoothCaret ? styles.caretBlinkSmooth : styles.caretBlink: '',
+                smoothCaret && "duration-100", !typingStarted ? smoothCaret ? styles.caretBlinkSmooth : styles.caretBlink : '',
             )}
             style={{
-                transform: `translate(${caretPositon.x}px, ${caretPositon.y }px)`,
+                transform: `translate(${caretPositon.x}px, ${caretPositon.y}px)`,
                 ...sizingstyle,
             }}
         />
