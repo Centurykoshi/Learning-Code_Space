@@ -8,10 +8,6 @@ export default async function Home() {
         headers: await headers(),
     });
 
-    // If user is authenticated, redirect them to dashboard
-    if (session?.user) {
-        redirect("/dashboard");
-    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -101,90 +97,21 @@ export default async function Home() {
                         </div>
 
                         {/* Interactive Games */}
-                        <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-                            <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mb-6">
-                                <span className="text-2xl">🎮</span>
-                            </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-4">Therapeutic Games</h3>
-                            <p className="text-gray-600 mb-4">
-                                Engage with interactive games and activities designed to improve focus and reduce stress.
-                            </p>
-                            <div className="text-orange-600 font-semibold">→ Play Games</div>
-                        </div>
-
+                       
                         {/* Typing Practice */}
-                        <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-                            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center mb-6">
-                                <span className="text-2xl">⌨️</span>
-                            </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-4">Mindful Typing</h3>
-                            <p className="text-gray-600 mb-4">
-                                Practice mindfulness through focused typing exercises that improve concentration and reduce anxiety.
-                            </p>
-                            <div className="text-blue-600 font-semibold">→ Start Typing</div>
-                        </div>
+                        
 
                         {/* Progress Tracking */}
-                        <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-                            <div className="w-16 h-16 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl flex items-center justify-center mb-6">
-                                <span className="text-2xl">📈</span>
-                            </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-4">Progress Insights</h3>
-                            <p className="text-gray-600 mb-4">
-                                Monitor your mental wellness journey with detailed analytics and personalized insights.
-                            </p>
-                            <div className="text-yellow-600 font-semibold">→ View Progress</div>
-                        </div>
+                        
 
                         {/* Community Support */}
-                        <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-                            <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-500 rounded-2xl flex items-center justify-center mb-6">
-                                <span className="text-2xl">👥</span>
-                            </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-4">Personalized Experience</h3>
-                            <p className="text-gray-600 mb-4">
-                                Get a tailored experience based on your preferences, goals, and mental health needs.
-                            </p>
-                            <div className="text-pink-600 font-semibold">→ Get Started</div>
-                        </div>
+                       
                     </div>
                 </div>
             </section>
 
             {/* CTA Section */}
-            <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-700">
-                <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-                    <h2 className="text-4xl font-bold text-white mb-6">
-                        Ready to Start Your Mental Wellness Journey?
-                    </h2>
-                    <p className="text-xl text-blue-100 mb-8">
-                        Join thousands of users who have found peace and clarity with getOkay.
-                    </p>
-                    <Link href="/sign-up" className="bg-white text-blue-600 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-50 transition-all duration-200 transform hover:scale-105 shadow-lg inline-block">
-                        Get Started Free
-                    </Link>
-                </div>
-            </section>
-
-            {/* Footer */}
-            <footer className="bg-gray-900 text-white py-12">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center">
-                        <div className="flex items-center justify-center space-x-2 mb-4">
-                            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-sm">✓</span>
-                            </div>
-                            <h3 className="text-2xl font-bold">getOkay</h3>
-                        </div>
-                        <p className="text-gray-400 mb-6">
-                            Your companion for mental wellness and personal growth.
-                        </p>
-                        <div className="text-gray-500 text-sm">
-                            © 2025 getOkay. Built with care for your mental wellness.
-                        </div>
-                    </div>
-                </div>
-            </footer>
+           
         </div>
     );
 }

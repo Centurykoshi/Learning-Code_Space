@@ -69,7 +69,7 @@ export default function Input(props: Props) {
 
 
     return (
-        <div className="overflow-hidden  relative" style={{ height: 36 * 3 }}>
+        <div className="overflow-hidden  relative" style={{ height: "auto" }}>
             {words.length !== 0 && (
                 <Caret
                     lineHeight={lineHeight}
