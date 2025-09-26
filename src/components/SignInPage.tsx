@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
-import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Loader2, LayoutDashboard } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -72,6 +72,25 @@ const SignInPage = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="fixed top-5 left-0 right-0 p-4">
+                <div className="max-w-6xl mx-auto flex justify-between items-center px-6 sm:px-8 lg:px-20">
+                    <div className="flex flex-col">
+                        <Link href="/">
+                            <h1 className="text-xl font-semibold text-primary">getOkay</h1>
+                        </Link>
+                        <div className="text-sm text-muted-foreground opacity-50">
+                            Affirmation typing here hehe
+                        </div>
+                    </div>
+
+
+                    <Button variant="ghost" size="icon">
+                        <Link href="/dashboard">
+                            <LayoutDashboard className="w-6 h-6" />
+                        </Link>
+                    </Button>
+                </div>
+            </div>
             <div className="absolute opacity-100 pointer-events-none top-0 left-0 w-full h-full -z-10 fade-in animate-in duration-5000 overflow-hidden">
                 <LightRays className="bg-transparent" />
             </div>
@@ -83,7 +102,7 @@ const SignInPage = () => {
                 />
             </div>
             <div className="w-full max-w-sm">
-                <Card className="shadow-xl border bg-card/95 backdrop-blur-sm">
+                <Card className="shadow-xl border bg-transparent backdrop-blur-sm">
                     <CardHeader className="space-y-2 text-center pb-4">
                         <div className="mx-auto w-10 h-10 bg-muted rounded-lg flex items-center justify-center mb-1">
                             <div className="w-5 h-5 bg-foreground rounded-sm"></div>

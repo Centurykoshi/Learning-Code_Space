@@ -8,6 +8,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Provider } from 'react-redux'
 import { store } from "@/components/TypingComponent/ReduxLearning/store";
 import { ClientProviders } from "@/components/Providers/client-providers";
+import LightRays from "@/ChatbotComponents/LightRayComponent";
+import Particles from "@/ChatbotComponents/Particles";
 
 
 const geistSans = Geist({
@@ -46,6 +48,16 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <ClientProviders>
+              <div className="absolute opacity-100 pointer-events-none top-0 left-0 w-full h-full -z-10 fade-in animate-in duration-5000 overflow-hidden">
+                <LightRays className="bg-transparent" />
+              </div>
+              <div className="absolute pointer-events-none top-0 left-0 w-full h-full -z-10 fade-in animate-in duration-5000 overflow-hidden">
+                <Particles
+                  className="bg-transparent"
+                  particleCount={400}
+                  particleBaseSize={30}
+                />
+              </div>
               {/* <ThemeToggle /> */}
               {children}
             </ClientProviders>

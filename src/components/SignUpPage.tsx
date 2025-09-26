@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
-import { Mail, Lock, Eye, EyeOff, User, Loader2 } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User, Loader2, LayoutDashboard } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -90,6 +90,25 @@ const SignUpPage = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="fixed top-5 left-0 right-0 p-4">
+                <div className="max-w-6xl mx-auto flex justify-between items-center px-6 sm:px-8 lg:px-20">
+                    <div className="flex flex-col">
+                        <Link href="/">
+                            <h1 className="text-xl font-semibold text-primary">getOkay</h1>
+                        </Link>
+                        <div className="text-sm text-muted-foreground opacity-50">
+                            Affirmation typing here hehe
+                        </div>
+                    </div>
+
+
+                    <Button variant="ghost" size="icon">
+                        <Link href="/dashboard">
+                            <LayoutDashboard className="w-6 h-6" />
+                        </Link>
+                    </Button>
+                </div>
+            </div>
             <div className="absolute opacity-100 pointer-events-none top-0 left-0 w-full h-full -z-10 fade-in animate-in duration-5000 overflow-hidden">
                 <LightRays className="bg-transparent" />
             </div>
