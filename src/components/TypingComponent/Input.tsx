@@ -22,8 +22,8 @@ export default function Input(props: Props) {
     const [wordsOffset, setWordsOffset] = useState(0);
 
     const wordWrapperRef = useRef<HTMLDivElement>(null);
-    const wordRef = useRef<HTMLDivElement>();
-    const charRef = useRef<HTMLSpanElement>();
+    const wordRef = useRef<HTMLDivElement>(undefined);
+    const charRef = useRef<HTMLSpanElement>(undefined);
     const hiddenInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -73,7 +73,7 @@ export default function Input(props: Props) {
 
 
     return (
-        <div className="overflow-hidden  relative" style={{ height: "auto"}}>
+        <div className="overflow-hidden  relative" style={{ height: "auto" }}>
             {words.length !== 0 && (
                 <Caret
                     lineHeight={lineHeight}

@@ -25,9 +25,10 @@
 .char {
   display: inline-block;
   border-left: 1px solid transparent;
- color: var(--color-primary);
- opacity: 40%;  /* default text color */
+
+ opacity: 30%;  /* default text color */
   font-size: 1.5rem; /* bigger text */
+  color: var(--color-primary);
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
 

@@ -64,7 +64,7 @@ export default function Caret(props: Props) {
 
         const { offsetLeft: charOffsetLeft, offsetWidth: charOffsetWidth } = charRef.current;
         setCaretPostion({
-            x: wordOffsetLeft + charOffsetLeft + charOffsetWidth,
+            x: wordOffsetLeft + charOffsetLeft ,
             y: wordOffsetTop - wordsOffset,
         });
     }, [wordIndex, charIndex, wordsOffset, firstWord, wordRef, charRef, lineHeight]);
@@ -72,6 +72,8 @@ export default function Caret(props: Props) {
     useEffect(() => {
         setCharWidth(charRef.current?.offsetWidth || 0);
     }, [lineHeight]);
+
+    console.log("Caret Position :", caretPositon.x, caretPositon.y);
 
 
     return (
@@ -81,7 +83,7 @@ export default function Caret(props: Props) {
                 smoothCaret && "duration-100", !typingStarted ? smoothCaret ? styles.caretBlinkSmooth : styles.caretBlink : '',
             )}
             style={{
-                transform: `translate(${caretPositon.x}px, ${caretPositon.y}px)`,
+                transform: `translate(${caretPositon.x }px, ${caretPositon.y}px)`,
                 ...sizingstyle,
             }}
         />
