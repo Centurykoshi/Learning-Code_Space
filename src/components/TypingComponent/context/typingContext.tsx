@@ -21,13 +21,13 @@ const initial: Context = {
     typingDisabled: false,
     lineHeight: 0,
     typemodeVisible: true, // Fixed: was 'typemodevisible'
-    setTypemodeVisible: () => { }, // Fixed: was 'setTypemodevisible'
-    setLineHeight: () => { },
-    onTypingStarted: () => { },
-    onTypingEnded: () => { },
-    onTypingDisable: () => { },
-    onTypingAllow: () => { },
-    onUpdateTypingFocus: () => { },
+    setTypemodeVisible: () => {}, // Fixed: was 'setTypemodevisible'
+    setLineHeight: () => {},
+    onTypingStarted: () => {},
+    onTypingEnded: () => {},
+    onTypingDisable: () => {},
+    onTypingAllow: () => {},
+    onUpdateTypingFocus: () => {},
 };
 
 const TypingContext = createContext(initial);

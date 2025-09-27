@@ -166,7 +166,7 @@ export async function generatetypingtext(mode: "Story" | "Affirmation", time: nu
     let prompt: string;
 
     if (mode === "Story") {
-      prompt = `Generate a ${targetWords}-word engaging short story suitable for typing practice. 
+      prompt = `Generate a ${targetWords}-word engaging short story suitable for typing practice it needs to be unique and fun to write not about typing itself it should be about stories . 
       The story should be:
       - Interesting and motivational
       - Use common, everyday vocabulary (avoid complex technical terms)
@@ -182,7 +182,7 @@ export async function generatetypingtext(mode: "Story" | "Affirmation", time: nu
       Create content that helps practice different typing skills while remaining engaging.
       Just return the story text without any formatting or extra explanation.`;
     } else {
-      prompt = `Generate ${targetWords} words of positive affirmations and motivational content for typing practice.
+      prompt = `Generate ${targetWords} words of positive affirmations and motivational content for typing practice but it shoudln't be about typing itself it should be about affirmation about you .
       The content should be:
       - Uplifting and encouraging
       - Use simple, clear everyday language

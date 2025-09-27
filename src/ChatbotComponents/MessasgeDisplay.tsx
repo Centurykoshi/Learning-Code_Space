@@ -21,7 +21,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages, isTypi
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
-                        duration: 0.2,
+                        duration: 0.8,
                         delay: index * 0.02,
                         ease: "easeOut"
                     }}
@@ -65,7 +65,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages, isTypi
                     </div>
                 </motion.div>
             ))}
-            
+
 
             {/* Typing indicator */}
             {isTyping && (
