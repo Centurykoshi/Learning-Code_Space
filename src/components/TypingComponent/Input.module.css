@@ -26,7 +26,7 @@
   display: inline-block;
   border-left: 1px solid transparent;
  color: var(--color-primary);
- opacity: 70%;  /* default text color */
+ opacity: 40%;  /* default text color */
   font-size: 1.5rem; /* bigger text */
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }

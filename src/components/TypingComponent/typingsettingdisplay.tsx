@@ -62,11 +62,11 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
         };
 
         if (typingFocused) {
-            window.addEventListener("mousemove", handleMousemove);
+            document.addEventListener("mousemove", handleMousemove);
         }
 
         return () => {
-            window.removeEventListener("mousemove", handleMousemove);
+            document.removeEventListener("mousemove", handleMousemove);
         }
     }, [typingFocused, onUpdateTypingFocus]);
 
@@ -130,6 +130,10 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
             setisLoading(false);
         }
     }, [response]);
+
+    if (response) {
+        
+    }
 
     useEffect(() => {
         if (typingStarted) {
@@ -243,10 +247,10 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
 
     return (
         <>
-            <div className="flex max-h-screen flex-col items-center justify-start relative ">
-                <div className=" w-full max-w-4xl mb-8 fixed top-[20%] m-0  ">
-                    <Card className="m-0 p-0 bg-transparent border-0 shadow-none">
-                        <CardContent className="flex gap-1 justify-center items-center flex-wrap">
+            <div className="min-h-screen relative ">
+                <div className=" w-full max-w-6xl  m-0 ">
+                    <Card className="m-0 p-0 bg-transparent border-0 shadow-none relative  top-30">
+                        <CardContent className="flex gap-1 justify-center items-center flex-wrap ">
                             {timeSelectionElements}
                             <div className="text-muted-foreground opacity-35 text-center 
                              flex items-center justify-center font-extrabold text-xl "> |</div>
@@ -264,7 +268,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
                         </CardContent>
                     </Card>
 
-                    <div className="relative flex justify-center items-center min-h-[60vh] ">
+                    <div className="relative top-50 min-h-screen">
                         <div className="text-center  max-w-7xl">
                             {isCapslock && (
                                 <div className="flex items-center bg-primary color-primary-foreground 
@@ -279,7 +283,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
                                     words={state.words}
                                     wordIndex={state.wordIndex}
                                     charIndex={state.charIndex}
-                                    fontSize={24}
+                                    fontSize={32}
                                 />
                             ) : (
                                 <p className="text-muted-foreground leading-relaxed">

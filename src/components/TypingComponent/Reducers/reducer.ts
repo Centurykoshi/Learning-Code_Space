@@ -39,7 +39,7 @@ export type TypingAction =
     | { type: "RESTART"; payload?: TypingWords }
     | { type: "TIMELINE" }
     | { type: "RESULT"; payload?: number }
-    | { type: "NEW_WORDS"; payload: { words: TypingWords; author?: string } };
+    | { type: "NEW_WORDS"; payload: { words: TypingWords } };
 
 export default function typingReducer(
     state: TypingState,

@@ -1,155 +1,139 @@
-import { useContext, useEffect, useRef, useState } from 'react';
-import { TypingContext } from '@/context/typing.context';
-import { ProfileContext } from '@/context/profile.context';
-import { TypingWords } from '../types';
-import Caret from './Caret';
-import styles from './Input.module.scss';
+import { TypingWords } from "@/hooks/types";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { TypingContext } from "./context/typingContext";
+import Caret from "./Caret";
+import { cn } from "@/lib/utils";
+import styles from './Input.module.css';
 
 interface Props {
-  words: TypingWords;
-  wordIndex: number;
-  charIndex: number;
-
-  /* Used for the 1v1 mode */
-  secondCaret?: { wordIndex: number; charIndex: number };
+    words: TypingWords;
+    wordIndex: number;
+    charIndex: number;
+    fontSize: number;
 }
 
 export default function Input(props: Props) {
-  const { words, wordIndex, charIndex, secondCaret } = props;
+    const { words, wordIndex, charIndex, fontSize } = props;
 
-  const { typingStarted, typingFocused, lineHeight, setLineHeight } =
-    useContext(TypingContext);
-  const { profile } = useContext(ProfileContext);
-  const [wordsOffset, setWordsOffset] = useState(0);
+    const { typingStarted, typingFocused, lineHeight, setLineHeight } =
+        useContext(TypingContext);
 
-  const wordWrapperRef = useRef<HTMLDivElement>(null);
-  const wordRef = useRef<HTMLDivElement>();
-  const charRef = useRef<HTMLSpanElement>();
-  const hiddenInputRef = useRef<HTMLInputElement>(null);
+    const [wordsOffset, setWordsOffset] = useState(0);
 
-  const secondCaretWordRef = useRef<HTMLDivElement>();
-  const secondCaretCharRef = useRef<HTMLSpanElement>();
+    const wordWrapperRef = useRef<HTMLDivElement>(null);
+    const wordRef = useRef<HTMLDivElement>();
+    const charRef = useRef<HTMLSpanElement>();
+    const hiddenInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (typingStarted) hiddenInputRef.current?.focus();
-  }, [typingStarted]);
+    useEffect(() => {
+        if (typingStarted) hiddenInputRef.current?.focus();
+    }, [typingStarted]);
 
-  useEffect(() => {
-    if (!wordWrapperRef.current) return;
-    const { offsetTop, clientHeight } = wordWrapperRef.current;
-    setWordsOffset(Math.max(offsetTop - clientHeight, 0));
-  }, [charIndex]);
+    useEffect(() => {
+        if (!wordWrapperRef.current) return;
+        const { offsetTop, clientHeight } = wordWrapperRef.current;
+        setWordsOffset(Math.max(offsetTop - clientHeight, 0));
+    }, [charIndex]);
 
-  const firstWord = words[0]?.chars.join('');
+    const firstWord = words[0]?.chars.join('');
 
-  useEffect(() => {
-    setLineHeight((state) => wordWrapperRef.current?.clientHeight || state);
+    // Height measurement logic - based on the working first example
+    useEffect(() => {
+        setLineHeight((state) => wordWrapperRef.current?.clientHeight || state);
 
-    const interval = setInterval(function () {
-      setLineHeight((state) => {
-        if (state === 0 || wordWrapperRef.current?.clientHeight !== state) {
-          return wordWrapperRef.current?.clientHeight || state;
-        }
+        const interval = setInterval(function () {
+            setLineHeight((state) => {
+                if (state === 0 || wordWrapperRef.current?.clientHeight !== state) {
+                    console.log("Updating Line Height:", wordWrapperRef.current?.clientHeight);
+                    return wordWrapperRef.current?.clientHeight || state;
+                }
 
-        clearInterval(interval);
-        return state;
-      });
-    }, 200);
+                clearInterval(interval);
+                console.log("Final Line Height:", state);
+                return state;
+            });
+        }, 200);
 
-    return () => {
-      clearInterval(interval);
-    };
-  }, [profile.customize.fontSize]);
+        return () => {
+            clearInterval(interval);
+        };
+    }, [fontSize, setLineHeight]);
 
-  return (
-    <div className={styles.wrapper} style={{ height: lineHeight * 3 }}>
-      {words.length !== 0 && profile.customize.caretStyle !== 'off' && (
-        <Caret
-          lineHeight={lineHeight}
-          wordIndex={wordIndex}
-          charIndex={charIndex}
-          wordsOffset={wordsOffset}
-          firstWord={firstWord}
-          wordRef={wordRef}
-          charRef={charRef}
-        />
-      )}
+    console.log("WordIndex:", wordIndex, "CharIndex:", charIndex, "LineHeight:", lineHeight);
 
-      {typingStarted && secondCaret && (
-        <Caret
-          lineHeight={lineHeight}
-          wordIndex={secondCaret.wordIndex}
-          charIndex={secondCaret.charIndex}
-          wordRef={secondCaretWordRef}
-          charRef={secondCaretCharRef}
-          firstWord={firstWord}
-          wordsOffset={wordsOffset}
-          className={styles.secondCaret}
-        />
-      )}
+    return (
+        <div className="overflow-hidden relative" style={{ height: lineHeight * 3 }}>
+            {words.length !== 0 && (
+                <Caret
+                    lineHeight={lineHeight}
+                    wordIndex={wordIndex}
+                    charIndex={charIndex}
+                    wordsOffset={wordsOffset}
+                    firstWord={firstWord}
+                    wordRef={wordRef}
+                    charRef={charRef}
+                />
+            )}
 
-      <input
-        type="text"
-        className={`${styles['hidden-input']} ${
-          typingFocused ? styles['hidden-input--nocursor'] : ''
-        }`}
-        autoCapitalize="off"
-        ref={hiddenInputRef}
-        tabIndex={-1}
-      />
-      <div
-        className={styles.words}
-        style={{
-          transform:
-            secondCaret || typingStarted
-              ? `translateY(-${wordsOffset}px)`
-              : undefined,
-          fontSize: profile.customize.fontSize,
-        }}
-      >
-        {words.map((word, index) => {
-          const isCurrentWord = index === wordIndex;
-          const isSecondCaretWord = secondCaret && index === secondCaret.wordIndex;
+            <input
+                type="text"
+                className={cn(
+                    "absolute top-0 right-0 bottom-0 left-0 opacity-0 z-2 select-none text-lg cursor-default",
+                    typingFocused ? "cursor-none" : ""
+                )}
+                autoCapitalize="off"
+                ref={hiddenInputRef}
+                tabIndex={-1}
+            />
 
-          return (
             <div
-              key={index}
-              className={styles.wordWrapper}
-              ref={isCurrentWord ? wordWrapperRef : undefined}
-            >
-              <div
-                className={`${styles.word} ${
-                  word.isIncorrect ? styles.wordIncorrect : ''
-                }`}
-                ref={(node) => {
-                  if (isCurrentWord) wordRef.current = node || undefined;
-                  if (isSecondCaretWord)
-                    secondCaretWordRef.current = node || undefined;
+                className="flex flex-wrap select-none duration-75"
+                style={{
+                    transform: typingStarted ? `translateY(-${wordsOffset}px)` : undefined,
+                    fontSize: fontSize,
                 }}
-              >
-                {word.chars.map((char, index) => (
-                  <span
-                    key={index}
-                    className={`${styles.char} ${
-                      char.type !== 'none' ? styles[`char--${char.type}`] : ''
-                    }`}
-                    ref={(node) => {
-                      if (isCurrentWord && index === charIndex) {
-                        charRef.current = node || undefined;
-                      }
-                      if (isSecondCaretWord && index === secondCaret.charIndex) {
-                        secondCaretCharRef.current = node || undefined;
-                      }
-                    }}
-                  >
-                    {char.content}
-                  </span>
-                ))}
-              </div>
+            >
+                {words.map((word, index) => {
+                    const isCurrentWord = index === wordIndex;
+
+                    return (
+                        <div
+                            key={index}
+                            className="pl-1 pr-1"
+                            ref={isCurrentWord ? wordWrapperRef : undefined}
+                        >
+                            <div
+                                className={cn(
+                                    "border-transparent-1 relative",
+                                    word.isIncorrect ? styles.wordIncorrect : ''
+                                )}
+                                ref={(node) => {
+                                    if (isCurrentWord) {
+                                        wordRef.current = node || undefined;
+                                    }
+                                }}
+                            >
+                                {word.chars.map((char, charIdx) => (
+                                    <span
+                                        key={charIdx}
+                                        className={`${styles.char} ${char.type !== 'none'
+                                            ? styles[`char${char.type.charAt(0).toUpperCase() + char.type.slice(1)}`]
+                                            : ''
+                                            }`}
+                                        ref={(node) => {
+                                            if (isCurrentWord && charIdx === charIndex) {
+                                                charRef.current = node || undefined;
+                                            }
+                                        }}
+                                    >
+                                        {char.content}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+        </div>
+    );
 }
