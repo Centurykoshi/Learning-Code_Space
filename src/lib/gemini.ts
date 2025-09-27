@@ -35,82 +35,88 @@ function createSystemPrompt(user: UserData, userMessage: string, conversationHis
   let guidance = "";
   if (user.age !== null) {
     if (user.age < 13) {
-      guidance = "Use very simple, friendly, and supportive language. Focus on school, hobbies, family, and social confidence.";
+      guidance = "Use very simple, friendly language like talking to a young friend.";
     } else if (user.age < 18) {
-      guidance = "Use encouraging and relatable language. Focus on school, friendships, self-esteem, and family support.";
+      guidance = "Be encouraging and relatable, like a supportive older sibling.";
     } else if (user.age < 30) {
-      guidance = "Address career, relationships, and life transition challenges.";
+      guidance = "Talk about career, relationships, and life challenges in a casual, understanding way.";
     } else if (user.age < 50) {
-      guidance = "Focus on work-life balance, family responsibilities, and personal growth.";
+      guidance = "Focus on work-life balance and personal growth with mature understanding.";
     } else {
-      guidance = "Consider health, life reflection, and finding continued purpose.";
+      guidance = "Be respectful and thoughtful about life experiences and wisdom.";
     }
   } else {
-    guidance = "Address general life challenges and personal growth.";
+    guidance = "Be supportive and understanding about general life challenges.";
   }
 
-  // Adjust response length based on user message length
-  const isShortMessage = userMessage.trim().length < 20;
-  const lengthInstruction = isShortMessage
-    ? "Respond naturally and concisely, just a few sentences."
-    : "Provide detailed, helpful, and empathetic responses (150-400 words).";
+  // Analyze the user message to determine response style
+  const messageLength = userMessage.trim().length;
+  const isGreeting = /^(hi|hello|hey|sup|good morning|good afternoon|good evening)\b/i.test(userMessage.trim());
+  const isShortResponse = /^(yes|no|ok|okay|sure|thanks|thank you|bye|goodbye)\b/i.test(userMessage.trim());
+  const isEmotional = /\b(sad|angry|frustrated|depressed|anxious|worried|scared|happy|excited|great|amazing)\b/i.test(userMessage);
+  const isQuestion = userMessage.includes('?');
+
+  let responseStyle = "";
+  if (isGreeting) {
+    responseStyle = "Respond with a warm, casual greeting. Ask how they're doing or how their day is going. Keep it brief and friendly.";
+  } else if (isShortResponse) {
+    responseStyle = "Give a brief, natural response that acknowledges what they said and gently encourages more conversation.";
+  } else if (messageLength < 20) {
+    responseStyle = "Keep your response short and conversational, like texting a friend. 1-2 sentences max.";
+  } else if (isEmotional) {
+    responseStyle = "Show empathy and understanding. Ask follow-up questions to help them explore their feelings. Be supportive but not overwhelming.";
+  } else if (isQuestion) {
+    responseStyle = "Answer their question directly and conversationally. Add a gentle follow-up if appropriate.";
+  } else {
+    responseStyle = "Respond naturally and thoughtfully. Match their energy level and provide helpful insights when appropriate.";
+  }
 
   // Build memory context if available
   let memoryContext = "";
   if (conversationHistory?.memory) {
     const memory = conversationHistory.memory;
     if (memory.keyTopics?.length > 0) {
-      memoryContext += `\nREMEMBER: Previous topics discussed: ${memory.keyTopics.join(', ')}.`;
+      memoryContext += `\nYou've talked about: ${memory.keyTopics.slice(-3).join(', ')}.`;
     }
-    if (memory.userMentions) {
-      if (memory.userMentions.mentionedNames?.length > 0) {
-        memoryContext += ` User mentioned these names: ${memory.userMentions.mentionedNames.join(', ')}.`;
-      }
-      if (memory.userMentions.mentionedPlaces?.length > 0) {
-        memoryContext += ` Places mentioned: ${memory.userMentions.mentionedPlaces.join(', ')}.`;
-      }
-    }
-    if (memory.importantMessages?.length > 0) {
-      const recentImportant = memory.importantMessages.slice(-2);
-      memoryContext += `\nIMPORTANT CONTEXT: ${recentImportant.map((msg: any) =>
-        `User said: "${msg.userMessage.substring(0, 100)}..."`
-      ).join(' ')}`;
+    if (memory.userMentions?.mentionedNames?.length > 0) {
+      memoryContext += ` They mentioned: ${memory.userMentions.mentionedNames.slice(-2).join(', ')}.`;
     }
   }
 
-  // Add conversation summary if available
-  let summaryContext = "";
-  if (conversationHistory?.summary) {
-    summaryContext = `\nCONVERSATION SUMMARY: ${conversationHistory.summary}`;
-  }
-
-  // Add recent message history for context
-  let historyContext = "";
+  // Add recent conversation context
+  let recentContext = "";
   if (conversationHistory?.messages?.length > 1) {
-    const recentMessages = conversationHistory.messages.slice(-6); // Last 6 messages
-    historyContext = "\nRECENT CONVERSATION:\n" + recentMessages.map((msg: any) =>
-      `${msg.sender === 'USER' ? user.name : 'Dr. Maya'}: ${msg.content.substring(0, 200)}${msg.content.length > 200 ? '...' : ''}`
-    ).join('\n');
+    const lastMessage = conversationHistory.messages[conversationHistory.messages.length - 2];
+    if (lastMessage) {
+      recentContext = `\nLast time they said: "${lastMessage.content.substring(0, 100)}..."`;
+    }
   }
 
   return `
-You are Dr. Maya, a compassionate mental health expert.
+You are a friendly, supportive AI companion helping ${user.name}. You're like a caring friend who listens and offers genuine support.
 
-USER: ${user.name}${user.gender ? `, ${user.gender}` : ''}
+ABOUT ${user.name}: ${user.gender ? `${user.gender}, ` : ''}${user.name}
 
-INSTRUCTIONS:
-- Use ${user.name}'s name naturally in your responses.
+YOUR PERSONALITY:
+- Warm, genuine, and conversational
+- Never robotic or overly formal
+- Use ${user.name}'s name naturally but not excessively
 - ${guidance}
-- ${lengthInstruction}
-- Be warm, empathetic, and professional.
-- Give practical advice and coping strategies when appropriate.
-- Ask follow-up questions to help the user reflect.
-- Do not mention the user's age unless specifically asked.
-- Use formatting such as paragraphs, bullet points, or numbered lists when helpful for clarity.
-- Reference previous conversations naturally when relevant.
-${memoryContext}${summaryContext}${historyContext}
+- Match their communication style and energy
 
-Respond personally and thoughtfully to ${user.name}'s message, taking into account our conversation history.
+RESPONSE STYLE:
+${responseStyle}
+
+IMPORTANT RULES:
+- Don't introduce yourself as "Dr. Maya" or any specific title
+- Don't mention being an AI unless asked directly
+- Avoid therapy-speak or overly clinical language
+- Be authentic and human-like in your responses
+- Use natural conversation flow
+- Ask questions when it feels right, not forced
+${memoryContext}${recentContext}
+
+Respond to ${user.name} as a supportive friend would, keeping the conversation natural and flowing.
 `;
 }
 
@@ -123,12 +129,14 @@ export async function generateText(userId: string, userMessage: string, conversa
       return "I'm sorry, I couldn't find your profile. Please make sure you're logged in.";
     }
 
-    // Create AI model
+    // Create AI model with more conversational settings
     const model = genAi.getGenerativeModel({
       model: "gemini-2.5-flash",
       generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 2000,
+        temperature: 0.8, // Increased for more natural, varied responses
+        maxOutputTokens: 1000, // Reduced for more concise responses
+        topP: 0.9, // Added for more natural language flow
+        topK: 40, // Added for better word choice variety
       },
     });
 
