@@ -36,7 +36,7 @@ export default function MoodTracker({
 
     const Save_Mood_Mutation = useMutation(trpc.moodRespone.SaveMood.mutationOptions({
         onSuccess: (data) => {
-            console.log('Mutation success:', data);
+         
             toast.success("Mood saved to the database");
             queryClient.invalidateQueries({
                 queryKey: [["MoodRespone", "getAllMood"]]

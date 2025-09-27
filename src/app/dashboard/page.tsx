@@ -38,11 +38,11 @@ export default async function Dashboard() {
 
         // If profile is not completed, redirect to form
         if (profileStatus.needsCompletion) {
-            console.log("✅ Redirecting to form - profile not completed");
+        
             redirect("/form");
         }
 
-        console.log("✅ Profile completed - showing dashboard");
+      
     } catch (error) {
         // Note: NEXT_REDIRECT is not a real error, it's Next.js internal redirect mechanism
         if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {

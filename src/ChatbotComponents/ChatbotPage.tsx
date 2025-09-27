@@ -11,7 +11,7 @@ import { contain } from "three/src/extras/TextureUtils.js";
 
 // Conversation ID Display Component
 const ConversationIdDisplay = ({ conversationId }: { conversationId?: string }) => {
-    console.log("ConversationIdDisplay rendered with:", conversationId);
+   
     const [click, setclicked] = useState(false);
 
 
@@ -70,9 +70,9 @@ export default function ChatbotForm({ chat, conversationId }: ChatbotFormProps) 
     }, [messages])
 
     const handleSubmit = async (data: { value: string; conversationId?: string }) => {
-        console.log("handleSubmit called with data:", data);
+      
         const result = await sendMessage.mutateAsync(data);
-        console.log("Mutation completed with result:", result);
+       
         return result;
     };
 

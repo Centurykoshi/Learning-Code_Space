@@ -47,7 +47,7 @@ export const ChatForm: React.FC<ChatFormProps> = ({
     });
 
     const handleSubmit = async (data: z.infer<typeof formSchema>) => {
-        console.log("handleSubmit called with data:", data);
+    
         form.reset();
         try {
             await onSubmit({

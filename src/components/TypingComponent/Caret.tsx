@@ -73,7 +73,7 @@ export default function Caret(props: Props) {
         setCharWidth(charRef.current?.offsetWidth || 0);
     }, [lineHeight]);
 
-    console.log("Caret Position :", caretPositon.x, caretPositon.y);
+   
 
 
     return (

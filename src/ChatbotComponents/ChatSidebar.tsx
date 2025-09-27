@@ -49,10 +49,6 @@ export function ChatSidebar() {
         router.push("/Chatbot");
     };
 
-    // Debug logging
-    console.log('Conversations data:', conversations);
-    console.log('Is conversations an array?', Array.isArray(conversations));
-    console.log('Conversations length:', conversations?.length);
 
     if (error) {
         console.error('Query error:', error);

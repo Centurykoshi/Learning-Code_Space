@@ -33,7 +33,7 @@ export default function Input(props: Props) {
 
     const firstWord = words[0]?.chars.join('');
 
-    console.log("wordwra[[erRef]] :", wordWrapperRef.current?.offsetHeight);
+
 
     useEffect(() => {
         if (!wordWrapperRef.current) return;
@@ -41,9 +41,8 @@ export default function Input(props: Props) {
         setWordsOffset(Math.max(offsetHeight - clientHeight, 0));
     }, [charIndex])
 
-    console.log("First Word :", wordWrapperRef.current?.offsetHeight);
     const height = wordWrapperRef.current?.offsetHeight || 0;
-    console.log("WordIndx : " + wordIndex, " CharIndex : " + charIndex, "LineHEIGHT : " + lineHeight);
+
 
     useEffect(() => {
         setLineHeight((state) => wordWrapperRef.current?.clientHeight || state);
@@ -51,12 +50,12 @@ export default function Input(props: Props) {
         const interval = setInterval(function () {
             setLineHeight((state) => {
                 if (state === 0 || wordWrapperRef.current?.clientHeight !== state) {
-                    console.log("Updated Line Height : ", wordWrapperRef.current?.clientHeight || 0);
+         
                     return wordWrapperRef.current?.clientHeight || state;
                 }
 
                 clearInterval(interval);
-                console.log("Final Line Height : ", state);
+            
                 return state;
             });
         }, 200);
@@ -66,7 +65,7 @@ export default function Input(props: Props) {
         }
     }, [fontSize, setLineHeight]);
 
-    console.log("WordIndex:", wordIndex, "CharIndex:", charIndex, "LineHeight:", lineHeight);
+   
 
 
 

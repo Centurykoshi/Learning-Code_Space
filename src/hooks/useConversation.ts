@@ -63,12 +63,12 @@ export function useConversation({
             return { userMessage };
         },
         onSuccess: (data: { response: string; conversationId: string }, variables: { value: string; conversationId?: string }, context: any) => {
-            console.log("Mutation onSuccess called with data:", data);
+     
 
             // Update conversation ID if it's new and show it in the UI
             if (data.conversationId && !currentConversationId) {
                 setCurrentConversationId(data.conversationId);
-                console.log("New conversation created with ID:", data.conversationId);
+               
 
                 // Update the URL without any navigation using browser history API
                 // Correct path for your folder structure
@@ -99,7 +99,7 @@ export function useConversation({
             });
         },
         onError: (error: any, variables: { value: string; conversationId?: string }, context: any) => {
-            console.log("Mutation onError called with error:", error);
+           
 
             // Remove the optimistic user message on error
             setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp-user-')));
@@ -125,7 +125,6 @@ export function useConversation({
                 role: msg.sender === 'USER' ? 'user' : 'assistant',
                 timestamp: new Date(msg.createdAt),
             }));
-            console.log("Initializing messages from chat:", formattedMessages);
             setMessages(formattedMessages);
         }
     };
