@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import UserAccountNav from "@/components/UserAvatarNav";
 import ThemeToggle from "@/components/ThemeToggle";
 
+
+
 export default async function Home() {
     const session = await auth.api.getSession({
         headers: await headers(),
