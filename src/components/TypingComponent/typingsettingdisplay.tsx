@@ -48,9 +48,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
     const modeSchema = z.enum(["Story", "Affirmation"]);
     type modeschema = z.infer<typeof modeSchema>;
 
-    // Remove console.log that causes re-renders
-    // console.log(time);
-    // console.log(mode);
+
 
     const istypingDisabled = typingDisabled || isLoading;
 
@@ -166,7 +164,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
 
     const typingresponse = useMutation(trpc.typingResponse.typingsendmessage.mutationOptions({
         onSuccess: (data) => {
-            console.log("Typing settings saved:", data);
+
             toast.success("Typing settings saved!" + data);
         },
 
@@ -177,14 +175,13 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
 
     const handletypingresponsesubmit = useCallback(async (data: { mode: modeschema, time: number }) => {
         try {
-            console.log("Handletypingresponse is called : ", data);
+
             setisLoading(true);
             const result = await typingresponse.mutateAsync(data);
-            console.log("Result from typing response mutation : ", result);
+
             toast.success("Typing response generated successfully!");
 
             const words = getTypingWords(result.typingResponse.split(" "));
-            console.log("Converted Words : ", words);
             dispatch({ type: "RESTART", payload: words });
             setResponse(result.typingResponse);
             setisLoading(false);
@@ -250,7 +247,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
             <div className="min-h-screen relative m-0 overflow-hidden">
                 <div className=" w-full max-w-6xl  m-0 ">
                     <Card className="m-0 p-0 bg-transparent border-0 shadow-none relative  top-30">
-                        <CardContent className="flex gap-1 justify-center items-center flex-wrap ">
+                        <CardContent className="flex gap-1 justify-center items-center z-10 flex-wrap ">
                             {timeSelectionElements}
                             <div className="text-muted-foreground opacity-35 text-center 
                              flex items-center justify-center font-extrabold text-xl "> |</div>
@@ -268,12 +265,12 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
                         </CardContent>
                     </Card>
 
-                    <div className="relative top-50 min-h-screen m-0 overflow-hidden">
+                    <div className="relative flex flex-col justify-center items-center min-h-screen m-0 overflow-hidden">
                         <div className="text-center  max-w-7xl">
                             {isCapslock && (
-                                <div className="flex items-center bg-primary color-primary-foreground 
-                                px-4 py-2 border-r-0 absolute top-[-35] left-[50%] transform -translate-x-1/2
-                               whitespace-nowrap">
+                                <div className="flex  justify-center max-w-50 bg-primary color-primary-foreground 
+                                px-4 py-2 border-r-0 absolute top-10 left-[50%] transform -translate-x-1/2
+                               whitespace-nowrap gap-5">
                                     <LockIcon className="w-4 h-4" />
                                     <p>Caps Lock On</p>
                                 </div>
