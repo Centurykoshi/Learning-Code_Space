@@ -13,15 +13,11 @@ import { TypingWords } from "@/hooks/types";
 import { getTypingWords } from "./context/helper";
 import typingReducer, { initialState } from "./Reducers/reducer";
 import Input from "./Input";
-import Counter from "./Counter";
-import Result from "./result";
 let quoteAbortController: AbortController | null = null;
 
 interface Props {
     onCaretPostionChange?: (wordIndex: number, charIndex: number) => void;
 }
-
-
 
 export default function Typingsetting({ onCaretPostionChange }: Props) {
 
@@ -52,7 +48,9 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
     const modeSchema = z.enum(["Story", "Affirmation"]);
     type modeschema = z.infer<typeof modeSchema>;
 
-
+    // Remove console.log that causes re-renders
+    // console.log(time);
+    // console.log(mode);
 
     const istypingDisabled = typingDisabled || isLoading;
 
@@ -168,7 +166,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
 
     const typingresponse = useMutation(trpc.typingResponse.typingsendmessage.mutationOptions({
         onSuccess: (data) => {
-
+            console.log("Typing settings saved:", data);
             toast.success("Typing settings saved!" + data);
         },
 
@@ -179,15 +177,15 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
 
     const handletypingresponsesubmit = useCallback(async (data: { mode: modeschema, time: number }) => {
         try {
-
+            console.log("Handletypingresponse is called : ", data);
             setisLoading(true);
             const result = await typingresponse.mutateAsync(data);
-
+            console.log("Result from typing response mutation : ", result);
             toast.success("Typing response generated successfully!");
 
             const words = getTypingWords(result.typingResponse.split(" "));
+            console.log("Converted Words : ", words);
             dispatch({ type: "RESTART", payload: words });
-            dispatch({ type: "SET_TIMER", payload: { timeInSeconds: data.time } });
             setResponse(result.typingResponse);
             setisLoading(false);
             return result.typingResponse;
@@ -247,40 +245,12 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
         }
     }, [state.wordIndex, state.charIndex, onCaretPostionChange]);
 
-    // Timer effect - start countdown as soon as timer is set
-    useEffect(() => {
-        let interval: NodeJS.Timeout;
-
-        if (state.timeMode && state.timeRemaining !== null && state.timeRemaining > 0 && !state.result.showResult) {
-            interval = setInterval(() => {
-                dispatch({ type: "TICK_TIMER" });
-                // Only dispatch timeline if typing has started
-                if (typingStarted) {
-                    dispatch({ type: "TIMELINE" });
-                }
-            }, 1000);
-        }
-
-        return () => {
-            if (interval) {
-                clearInterval(interval);
-            }
-        };
-    }, [state.timeMode, state.timeRemaining, state.result.showResult, typingStarted]);
-
-    // Handle when timer completes
-    useEffect(() => {
-        if (state.timeMode && state.timeRemaining === 0 && !state.result.showResult && state.totalTime) {
-            dispatch({ type: "RESULT", payload: state.totalTime });
-        }
-    }, [state.timeRemaining, state.timeMode, state.result.showResult, state.totalTime]);
-
     return (
         <>
             <div className="min-h-screen relative m-0 overflow-hidden">
                 <div className=" w-full max-w-6xl  m-0 ">
                     <Card className="m-0 p-0 bg-transparent border-0 shadow-none relative  top-30">
-                        <CardContent className="flex gap-1 justify-center items-center z-10 flex-wrap ">
+                        <CardContent className="flex gap-1 justify-center items-center flex-wrap ">
                             {timeSelectionElements}
                             <div className="text-muted-foreground opacity-35 text-center 
                              flex items-center justify-center font-extrabold text-xl "> |</div>
@@ -298,51 +268,17 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
                         </CardContent>
                     </Card>
 
-                    <div className="relative flex flex-col justify-center items-center min-h-screen m-0 overflow-hidden">
+                    <div className="relative top-50 min-h-screen m-0 overflow-hidden">
                         <div className="text-center  max-w-7xl">
                             {isCapslock && (
-                                <div className="flex  justify-center max-w-50 bg-primary color-primary-foreground 
-                                px-4 py-2 border-r-0 absolute top-10 left-[50%] transform -translate-x-1/2
-                               whitespace-nowrap gap-5">
+                                <div className="flex items-center bg-primary color-primary-foreground 
+                                px-4 py-2 border-r-0 absolute top-[-35] left-[50%] transform -translate-x-1/2
+                               whitespace-nowrap">
                                     <LockIcon className="w-4 h-4" />
                                     <p>Caps Lock On</p>
                                 </div>
                             )}
-
-                            {/* Show counter when timer is set */}
-                            {(state.timeMode && state.timeRemaining !== null) && (
-                                <Counter
-                                    mode="time"
-                                    counter={state.timeRemaining}
-                                    wordsLength={state.words.length}
-                                />
-                            )}
-
-                            {/* Debug info - remove this later */}
-                            {process.env.NODE_ENV === 'development' && (
-                                <div style={{ fontSize: '12px', color: 'gray', margin: '10px' }}>
-                                    Debug: timeMode={String(state.timeMode)}, timeRemaining={state.timeRemaining},
-                                    typingStarted={String(typingStarted)}, showResult={String(state.result.showResult)}
-                                </div>
-                            )}
-
-                            {state.result.showResult ? (
-                                <Result
-                                    result={state.result}
-                                    onRestart={() => {
-                                        dispatch({ type: "RESTART" });
-                                        dispatch({ type: "SET_TIMER", payload: { timeInSeconds: time } });
-                                    }}
-                                    onRepeat={() => {
-                                        dispatch({ type: "RESTART", payload: state.words });
-                                        dispatch({ type: "SET_TIMER", payload: { timeInSeconds: time } });
-                                    }}
-                                    onGoBack={() => {
-                                        dispatch({ type: "RESTART" });
-                                        setResponse(null);
-                                    }}
-                                />
-                            ) : state.words.length > 0 ? (
+                            {state.words.length > 0 ? (
                                 <Input
                                     words={state.words}
                                     wordIndex={state.wordIndex}
