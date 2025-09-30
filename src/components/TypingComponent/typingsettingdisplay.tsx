@@ -132,7 +132,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
     }, [response]);
 
     if (response) {
-        
+
     }
 
     useEffect(() => {
@@ -166,7 +166,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
 
     const typingresponse = useMutation(trpc.typingResponse.typingsendmessage.mutationOptions({
         onSuccess: (data) => {
-        
+
             toast.success("Typing settings saved!" + data);
         },
 
@@ -177,7 +177,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
 
     const handletypingresponsesubmit = useCallback(async (data: { mode: modeschema, time: number }) => {
         try {
-    
+
             setisLoading(true);
             const result = await typingresponse.mutateAsync(data);
 
@@ -248,7 +248,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
     // Timer effect - start countdown as soon as timer is set
     useEffect(() => {
         let interval: NodeJS.Timeout;
-        
+
         if (state.timeMode && state.timeRemaining !== null && state.timeRemaining > 0 && !state.result.showResult) {
             interval = setInterval(() => {
                 dispatch({ type: "TICK_TIMER" });
@@ -306,7 +306,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
                                     <p>Caps Lock On</p>
                                 </div>
                             )}
-                            
+
                             {/* Show counter when timer is set */}
                             {(state.timeMode && state.timeRemaining !== null) && (
                                 <Counter
@@ -315,11 +315,11 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
                                     wordsLength={state.words.length}
                                 />
                             )}
-                            
+
                             {/* Debug info - remove this later */}
                             {process.env.NODE_ENV === 'development' && (
                                 <div style={{ fontSize: '12px', color: 'gray', margin: '10px' }}>
-                                    Debug: timeMode={String(state.timeMode)}, timeRemaining={state.timeRemaining}, 
+                                    Debug: timeMode={String(state.timeMode)}, timeRemaining={state.timeRemaining},
                                     typingStarted={String(typingStarted)}, showResult={String(state.result.showResult)}
                                 </div>
                             )}

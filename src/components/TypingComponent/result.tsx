@@ -55,8 +55,8 @@ export default function Result(props: Props) {
     };
 
     // Safety check for timeline data
-    const lastTimelineEntry = result.timeline && result.timeline.length > 0 
-        ? result.timeline[result.timeline.length - 1] 
+    const lastTimelineEntry = result.timeline && result.timeline.length > 0
+        ? result.timeline[result.timeline.length - 1]
         : { wpm: 0, raw: 0, accuracy: 100, second: 0 };
 
     const {

@@ -2,7 +2,7 @@ import { TypingWords } from "@/hooks/types";
 
 import { TypingState } from "../reducer";
 
-export  function restart(
+export function restart(
     state: TypingState,
     words?: TypingWords
 ): TypingState {
