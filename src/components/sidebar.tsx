@@ -72,10 +72,7 @@ export default async function Sidebar() {
                         </Link>
 
                     </div>
-                    <div className="flex justify-center place-items-center-safe h-10 w-10">
-                        <User className="transition-all  duration-300 text-primary transform hover:rotate-360 cursor-pointer " />
 
-                    </div>
 
                 </div>
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BotIcon, Hourglass, Keyboard, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import UserAccountNav from "@/components/UserAvatarNav";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default async function Home() {
     const session = await auth.api.getSession({
@@ -14,8 +15,8 @@ export default async function Home() {
 
     return (
         <div className="min-h-screen bg-transparent">
-            <header className="mt-10">
-                <div className="max-w-6xl mx-auto flex justify-between items-center px-6 sm:px-8 lg:px-20">
+            <header className="relative top-10 bg-transparent z-2">
+                <div className="max-w-6xl mx-auto flex justify-between items-center bg-transparent sm:px-8 lg:px-20">
                     <div className="flex flex-col">
                         <h1 className="text-xl font-semibold text-primary">getOkay</h1>
                         <div className="text-sm text-muted-foreground opacity-50">
@@ -28,6 +29,9 @@ export default async function Home() {
 
 
                     <div className="flex justify-between gap-5">
+                        <div className="flex  justify-center items-end ">
+                            <ThemeToggle className="h-10 w-10 " />
+                        </div>
                         {session ? (<UserAccountNav user={session?.user} />) : (
                             <div className="flex gap-2">
 

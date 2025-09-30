@@ -263,9 +263,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     fragColor.z *= 0.5 + brightness * 0.5;
   } else {
     // Light mode - brighter and more uniform
-    fragColor.x *= 0.3 + brightness * 0.7;
-    fragColor.y *= 0.4 + brightness * 0.6;
-    fragColor.z *= 0.6 + brightness * 0.4;
+    fragColor.x *= 0.5 + brightness * 0.7;
+    fragColor.y *= 0.7 + brightness * 0.6;
+    fragColor.z *= 0.9 + brightness * 0.4;
   }
 
   if (saturation != 1.0) {
