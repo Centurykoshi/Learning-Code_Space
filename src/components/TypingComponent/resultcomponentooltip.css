@@ -1,0 +1,27 @@
+.container {
+    background-color: var(--clr-tooltip-bg);
+    color: var(--clr-tooltip-text);
+    padding: 10px 15px;
+    border-radius: 8px;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+}
+
+.item__color-block {
+    width: 15px;
+    height: 15px;
+    margin-right: 5px;
+    border-radius: 2px;
+    border: 1px solid var(--clr-tooltip-text);
+}
+
+.item__text {
+    margin-bottom: 4px;
+}
+
+.item__value {
+    font-weight: bold;
+}

@@ -2,7 +2,7 @@ import { TypingWords } from "@/hooks/types";
 
 import { TypingState } from "../reducer";
 
-export  function restart(
+export function restart(
     state: TypingState,
     words?: TypingWords
 ): TypingState {
@@ -22,5 +22,12 @@ export  function restart(
         typedCorrectly: 0,
         mistyping: 0,
         dateTypingStarted: null,
+        result: {
+            showResult: false,
+            timeline: [],
+            errors: 0,
+            testType: null,
+        },
+        timeRemaining: state.totalTime, // Reset timer to original time
     };
 }

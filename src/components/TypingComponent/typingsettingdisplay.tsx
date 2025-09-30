@@ -13,6 +13,8 @@ import { TypingWords } from "@/hooks/types";
 import { getTypingWords } from "./context/helper";
 import typingReducer, { initialState } from "./Reducers/reducer";
 import Input from "./Input";
+import Counter from "./Counter";
+import Result from "./result";
 let quoteAbortController: AbortController | null = null;
 
 interface Props {
@@ -130,7 +132,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
     }, [response]);
 
     if (response) {
-        
+
     }
 
     useEffect(() => {
@@ -164,7 +166,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
 
     const typingresponse = useMutation(trpc.typingResponse.typingsendmessage.mutationOptions({
         onSuccess: (data) => {
-        
+
             toast.success("Typing settings saved!" + data);
         },
 
@@ -175,7 +177,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
 
     const handletypingresponsesubmit = useCallback(async (data: { mode: modeschema, time: number }) => {
         try {
-    
+
             setisLoading(true);
             const result = await typingresponse.mutateAsync(data);
 
@@ -183,6 +185,7 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
 
             const words = getTypingWords(result.typingResponse.split(" "));
             dispatch({ type: "RESTART", payload: words });
+            dispatch({ type: "SET_TIMER", payload: { timeInSeconds: data.time } });
             setResponse(result.typingResponse);
             setisLoading(false);
             return result.typingResponse;
@@ -242,6 +245,34 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
         }
     }, [state.wordIndex, state.charIndex, onCaretPostionChange]);
 
+    // Timer effect - start countdown as soon as timer is set
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+
+        if (state.timeMode && state.timeRemaining !== null && state.timeRemaining > 0 && !state.result.showResult) {
+            interval = setInterval(() => {
+                dispatch({ type: "TICK_TIMER" });
+                // Only dispatch timeline if typing has started
+                if (typingStarted) {
+                    dispatch({ type: "TIMELINE" });
+                }
+            }, 1000);
+        }
+
+        return () => {
+            if (interval) {
+                clearInterval(interval);
+            }
+        };
+    }, [state.timeMode, state.timeRemaining, state.result.showResult, typingStarted]);
+
+    // Handle when timer completes
+    useEffect(() => {
+        if (state.timeMode && state.timeRemaining === 0 && !state.result.showResult && state.totalTime) {
+            dispatch({ type: "RESULT", payload: state.totalTime });
+        }
+    }, [state.timeRemaining, state.timeMode, state.result.showResult, state.totalTime]);
+
     return (
         <>
             <div className="min-h-screen relative m-0 overflow-hidden">
@@ -275,7 +306,41 @@ export default function Typingsetting({ onCaretPostionChange }: Props) {
                                     <p>Caps Lock On</p>
                                 </div>
                             )}
-                            {state.words.length > 0 ? (
+
+                            {/* Show counter when timer is set */}
+                            {(state.timeMode && state.timeRemaining !== null) && (
+                                <Counter
+                                    mode="time"
+                                    counter={state.timeRemaining}
+                                    wordsLength={state.words.length}
+                                />
+                            )}
+
+                            {/* Debug info - remove this later */}
+                            {process.env.NODE_ENV === 'development' && (
+                                <div style={{ fontSize: '12px', color: 'gray', margin: '10px' }}>
+                                    Debug: timeMode={String(state.timeMode)}, timeRemaining={state.timeRemaining},
+                                    typingStarted={String(typingStarted)}, showResult={String(state.result.showResult)}
+                                </div>
+                            )}
+
+                            {state.result.showResult ? (
+                                <Result
+                                    result={state.result}
+                                    onRestart={() => {
+                                        dispatch({ type: "RESTART" });
+                                        dispatch({ type: "SET_TIMER", payload: { timeInSeconds: time } });
+                                    }}
+                                    onRepeat={() => {
+                                        dispatch({ type: "RESTART", payload: state.words });
+                                        dispatch({ type: "SET_TIMER", payload: { timeInSeconds: time } });
+                                    }}
+                                    onGoBack={() => {
+                                        dispatch({ type: "RESTART" });
+                                        setResponse(null);
+                                    }}
+                                />
+                            ) : state.words.length > 0 ? (
                                 <Input
                                     words={state.words}
                                     wordIndex={state.wordIndex}
