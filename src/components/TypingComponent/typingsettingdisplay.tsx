@@ -19,6 +19,8 @@ interface Props {
     onCaretPostionChange?: (wordIndex: number, charIndex: number) => void;
 }
 
+
+
 export default function Typingsetting({ onCaretPostionChange }: Props) {
 
     const [time, settime] = useState<number>(15);
