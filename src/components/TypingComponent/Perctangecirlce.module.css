@@ -1,0 +1,49 @@
+.circle {
+    --percent: 95;
+    position: relative;
+    width: 120px;
+    height: 120px;
+    font-size: 24px;
+    animation: fillRight 1s;
+}
+
+.circle__empty,
+.circle__filled,
+.circle__middle {
+    position: absolute;
+    border-radius: 50%;
+}
+
+.circle__empty,
+.circle__filled {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+.circle__empty {
+    z-index: 1;
+    background-color: var(--clr-char-incorrect);
+}
+
+.circle__filled {
+    z-index: 2;
+    border-radius: 50%;
+    background: conic-gradient(var(--clr-char-correct) calc(var(--percent) * 1%),
+            #0000 0);
+}
+
+.circle__middle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80%;
+    height: 80%;
+    top: 50%;
+    left: 50%;
+    z-index: 3;
+    background-color: var(--clr-bg);
+    font-weight: var(--font-weight-bold);
+    transform: translate(-50%, -50%);
+}
