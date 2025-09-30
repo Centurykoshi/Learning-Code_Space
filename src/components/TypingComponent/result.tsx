@@ -66,6 +66,16 @@ export default function Result(props: Props) {
         second: timeTook = 0,
     } = lastTimelineEntry;
 
+    // Check if this is a "no typing" result - be more lenient with the check
+    const hasTypingActivity = (result.timeline && result.timeline.length > 0) ||
+        result.errors > 0 ||
+        (result.timeline && result.timeline.some(entry => entry.wpm > 0 || entry.raw > 0));
+
+    // Ensure we have chart data - create minimal data if timeline is empty
+    const chartData = result.timeline && result.timeline.length > 0
+        ? result.timeline
+        : [{ second: 0, wpm: 0, raw: 0, accuracy: 100 }];
+
     return (
         <div className={styles['result__wrapper']}>
             {includeDate && result.date && (
@@ -78,159 +88,172 @@ export default function Result(props: Props) {
                     </TooltipContent>
                 </Tooltip>
             )}
-            <div className={styles.result}>
-                <div className={styles['wpm-accuracy-container']}>
-                    <div className={styles.wpm}>
-                        <p>WPM</p>
-                        <p className={styles['wpm__num']}>{wpm}</p>
-                    </div>
-                    <div className={styles.accuracy}>
-                        <p>Accuracy</p>
-                        <PercentCircleChart
-                            percentage={accuracy}
-                            className={styles['percentage-circle']}
-                        />
-                    </div>
+
+            {!hasTypingActivity && (!result.timeline || result.timeline.length === 0) && (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted-foreground)' }}>
+                    <p style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>No Typing Activity Detected</p>
+                    <p>The timer completed but no typing was recorded. Try typing some text when the test starts!</p>
                 </div>
-                <div className={styles.chart}>
-                    <ResponsiveContainer className={styles.chart}>
-                        <LineChart data={result.timeline}>
-                            <XAxis dataKey="second" />
-                            <YAxis dataKey="raw" yAxisId="left">
-                                <Label
-                                    value="Words per Minute"
-                                    angle={-90}
-                                    fill={config.colorWpm}
-                                    fontSize={config.labelFontSize}
-                                    position="right"
-                                    offset={config.labelOffset}
-                                    className={styles.label}
+            )}
+
+            {/* Always show results if we have timeline data or errors */}
+            {(hasTypingActivity || (result.timeline && result.timeline.length > 0) || result.errors > 0) && (
+                <>
+                    <div className={styles.result}>
+                        <div className={styles['wpm-accuracy-container']}>
+                            <div className={styles.wpm}>
+                                <p>WPM</p>
+                                <p className={styles['wpm__num']}>{wpm}</p>
+                            </div>
+                            <div className={styles.accuracy}>
+                                <p>Accuracy</p>
+                                <PercentCircleChart
+                                    percentage={accuracy}
+                                    className={styles['percentage-circle']}
                                 />
-                            </YAxis>
-                            <YAxis
-                                domain={[0, 100]}
-                                dataKey="accuracy"
-                                yAxisId="right"
-                                orientation="right"
-                            >
-                                <Label
-                                    value="Accuracy"
-                                    angle={-90}
-                                    fill={config.colorAccuracy}
-                                    fontSize={config.labelFontSize}
-                                    position="left"
-                                    offset={config.labelOffset}
-                                    className={styles.label}
-                                />
-                            </YAxis>
-                            <CartesianGrid className={styles.cartesianGrid} />
-                            <RechartsTooltip content={<ResultCustomTooltip />} />
-                            <Legend />
-                            <Line
-                                type="monotone"
-                                dataKey="wpm"
-                                yAxisId="left"
-                                dot={{
-                                    stroke: config.colorWpm,
-                                    strokeWidth: 5,
-                                    r: 1,
-                                }}
-                                strokeWidth={2}
-                                stroke={config.colorWpm}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="raw"
-                                yAxisId="left"
-                                strokeWidth={2}
-                                dot={{
-                                    stroke: config.colorRaw,
-                                    strokeWidth: 5,
-                                    r: 1,
-                                }}
-                                stroke={config.colorRaw}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="accuracy"
-                                yAxisId="right"
-                                strokeWidth={2}
-                                dot={{
-                                    stroke: config.colorAccuracy,
-                                    strokeWidth: 5,
-                                    r: 1,
-                                }}
-                                stroke={config.colorAccuracy}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-            <div className={styles['more-and-restart']}>
-                <div className={styles.more}>
-                    {result.testType && (
-                        <div className={styles.item}>
-                            <p className={`${styles['item__heading']} ${styles['raw-heading']}`}>
-                                test type
-                            </p>
-                            <p className={styles['item__value']}>{result.testType}</p>
+                            </div>
                         </div>
-                    )}
-                    <div className={styles.item}>
-                        <p className={`${styles['item__heading']} ${styles['raw-heading']}`}>
-                            raw
-                        </p>
-                        <p className={styles['item__value']}>{raw}</p>
-                    </div>
-                    <div className={styles.item}>
-                        <p
-                            className={`${styles['item__heading']} ${styles['error-heading']} ${result.errors === 0 ? styles['error-heading--noerrors'] : ''
-                                }`}
-                        >
-                            errors
-                        </p>
-                        <p className={styles['item__value']}>{result.errors}</p>
-                    </div>
-                    <div className={styles.item}>
-                        <p className={styles['item__heading']}>time</p>
-                        <p className={styles['item__value']}>{timeTook}s</p>
-                    </div>
-                    {result.quoteAuthor && (
-                        <div className={styles.item}>
-                            <p className={styles['item__heading']}>quote author</p>
-                            <p
-                                className={`${styles['item__value']} ${styles['quote-author-value']}`}
-                            >
-                                {result.quoteAuthor}
-                            </p>
+                        <div className={styles.chart}>
+                            <ResponsiveContainer className={styles.chart}>
+                                <LineChart data={chartData}>
+                                    <XAxis dataKey="second" />
+                                    <YAxis dataKey="raw" yAxisId="left">
+                                        <Label
+                                            value="Words per Minute"
+                                            angle={-90}
+                                            fill={config.colorWpm}
+                                            fontSize={config.labelFontSize}
+                                            position="right"
+                                            offset={config.labelOffset}
+                                            className={styles.label}
+                                        />
+                                    </YAxis>
+                                    <YAxis
+                                        domain={[0, 100]}
+                                        dataKey="accuracy"
+                                        yAxisId="right"
+                                        orientation="right"
+                                    >
+                                        <Label
+                                            value="Accuracy"
+                                            angle={-90}
+                                            fill={config.colorAccuracy}
+                                            fontSize={config.labelFontSize}
+                                            position="left"
+                                            offset={config.labelOffset}
+                                            className={styles.label}
+                                        />
+                                    </YAxis>
+                                    <CartesianGrid className={styles.cartesianGrid} />
+                                    <RechartsTooltip content={<ResultCustomTooltip />} />
+                                    <Legend />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="wpm"
+                                        yAxisId="left"
+                                        dot={{
+                                            stroke: config.colorWpm,
+                                            strokeWidth: 5,
+                                            r: 1,
+                                        }}
+                                        strokeWidth={2}
+                                        stroke={config.colorWpm}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="raw"
+                                        yAxisId="left"
+                                        strokeWidth={2}
+                                        dot={{
+                                            stroke: config.colorRaw,
+                                            strokeWidth: 5,
+                                            r: 1,
+                                        }}
+                                        stroke={config.colorRaw}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="accuracy"
+                                        yAxisId="right"
+                                        strokeWidth={2}
+                                        dot={{
+                                            stroke: config.colorAccuracy,
+                                            strokeWidth: 5,
+                                            r: 1,
+                                        }}
+                                        stroke={config.colorAccuracy}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
                         </div>
-                    )}
-                </div>
-                <div className={styles['buttons-wrapper']}>
-                    {onRestart && (
-                        <Button onClick={onRestart} className={styles.btn}>
-                            <ArrowLeft
-                                className={`${styles['btn__icon']} ${styles['btn__icon--arrow']}`}
-                            />
-                            <span>Next Test</span>
-                        </Button>
-                    )}
-                    {onRepeat && (
-                        <Button onClick={onRepeat} className={styles.btn}>
-                            <LockOpenIcon className={styles['btn__icon']} />
-                            <span>Repeat</span>
-                        </Button>
-                    )}
-                    {onGoBack && (
-                        <Button onClick={onGoBack} className={styles.btn}>
-                            <LollipopIcon
-                                className={`${styles['btn__icon']} ${styles['btn__icon--arrow']}`}
-                            />
-                            <span>Go Back</span>
-                        </Button>
-                    )}
-                </div>
-            </div>
+                    </div>
+                    <div className={styles['more-and-restart']}>
+                        <div className={styles.more}>
+                            {result.testType && (
+                                <div className={styles.item}>
+                                    <p className={`${styles['item__heading']} ${styles['raw-heading']}`}>
+                                        test type
+                                    </p>
+                                    <p className={styles['item__value']}>{result.testType}</p>
+                                </div>
+                            )}
+                            <div className={styles.item}>
+                                <p className={`${styles['item__heading']} ${styles['raw-heading']}`}>
+                                    raw
+                                </p>
+                                <p className={styles['item__value']}>{raw}</p>
+                            </div>
+                            <div className={styles.item}>
+                                <p
+                                    className={`${styles['item__heading']} ${styles['error-heading']} ${result.errors === 0 ? styles['error-heading--noerrors'] : ''
+                                        }`}
+                                >
+                                    errors
+                                </p>
+                                <p className={styles['item__value']}>{result.errors}</p>
+                            </div>
+                            <div className={styles.item}>
+                                <p className={styles['item__heading']}>time</p>
+                                <p className={styles['item__value']}>{timeTook}s</p>
+                            </div>
+                            {result.quoteAuthor && (
+                                <div className={styles.item}>
+                                    <p className={styles['item__heading']}>quote author</p>
+                                    <p
+                                        className={`${styles['item__value']} ${styles['quote-author-value']}`}
+                                    >
+                                        {result.quoteAuthor}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                        <div className={styles['buttons-wrapper']}>
+                            {onRestart && (
+                                <Button onClick={onRestart} className={styles.btn}>
+                                    <ArrowLeft
+                                        className={`${styles['btn__icon']} ${styles['btn__icon--arrow']}`}
+                                    />
+                                    <span>Next Test</span>
+                                </Button>
+                            )}
+                            {onRepeat && (
+                                <Button onClick={onRepeat} className={styles.btn}>
+                                    <LockOpenIcon className={styles['btn__icon']} />
+                                    <span>Repeat</span>
+                                </Button>
+                            )}
+                            {onGoBack && (
+                                <Button onClick={onGoBack} className={styles.btn}>
+                                    <LollipopIcon
+                                        className={`${styles['btn__icon']} ${styles['btn__icon--arrow']}`}
+                                    />
+                                    <span>Go Back</span>
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 }

@@ -1,6 +1,6 @@
 .container {
-    background-color: var(--clr-tooltip-bg);
-    color: var(--clr-tooltip-text);
+    background-color: var(--color-muted);
+    color: var(--color-primary);
     padding: 10px 15px;
     border-radius: 8px;
 }
@@ -15,7 +15,7 @@
     height: 15px;
     margin-right: 5px;
     border-radius: 2px;
-    border: 1px solid var(--clr-tooltip-text);
+    border: 1px solid var(--color-muted);
 }
 
 .item__text {

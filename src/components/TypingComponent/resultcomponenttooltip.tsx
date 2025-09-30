@@ -1,7 +1,6 @@
 import { TooltipProps } from 'recharts';
 import { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
-import styles from './resultcustomtooltip.module.css';
-
+import styles from './resultcomponenttooltip.module.css';
 type Props = TooltipProps<ValueType, NameType>;
 
 export default function ResultCustomTooltip(props: Props) {

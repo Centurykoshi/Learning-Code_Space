@@ -11,12 +11,14 @@ export default function result(state: TypingState, time?: number): TypingState {
 
     const timeline = [...state.result.timeline];
     const currentDate = new Date();
+    const totalTimeUsed = time || (state.totalTime || 0);
 
-    // If we have typing data, add final timeline entry
+    // Always ensure we have at least one timeline entry for the chart
     if (state.dateTypingStarted && state.typed > 0) {
+        // If we have typing data, add final timeline entry
         const timeTook = time ? time * 1000 : (currentDate.getTime() - state.dateTypingStarted);
         timeline.push({
-            second: time || twoDecimals(timeTook / 1000),
+            second: twoDecimals(timeTook / 1000),
             ...getTypingResults(
                 state.typed,
                 state.typedCorrectly,
@@ -24,14 +26,19 @@ export default function result(state: TypingState, time?: number): TypingState {
                 timeTook
             ),
         });
-    } else if (timeline.length === 0) {
-        // If no typing data, create a minimal timeline entry
-        timeline.push({
-            second: time || 0,
-            wpm: 0,
-            accuracy: 100,
-            raw: 0,
-        });
+    } else {
+        // If no typing data or timeline is empty, create entries to show time progression
+        if (timeline.length === 0) {
+            // Create a simple timeline showing the time that passed
+            for (let i = 0; i <= totalTimeUsed && i <= 5; i++) {
+                timeline.push({
+                    second: i,
+                    wpm: 0,
+                    accuracy: 100,
+                    raw: 0,
+                });
+            }
+        }
     }
 
     return {
@@ -42,6 +49,7 @@ export default function result(state: TypingState, time?: number): TypingState {
             timeline,
             date: currentDate,
             errors: state.mistyping,
+            testType: state.timeMode ? 'time' : 'words',
         },
     };
 }

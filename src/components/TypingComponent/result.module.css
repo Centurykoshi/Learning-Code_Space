@@ -115,7 +115,7 @@
 }
 
 .tooltip {
-    background-color: var(--clr-bg);
+    background-color: var(--color-background);
 }
 
 .restart {
@@ -183,11 +183,11 @@
 }
 
 .error-heading {
-    color: var(--clr-char-incorrect);
+    color: var(--color-destructive);
 }
 
 .error-heading--noerrors {
-    color: var(--clr-char-correct);
+    color: var(--color-primary);
 }
 
 .buttons-wrapper {

@@ -24,13 +24,13 @@
 
 .circle__empty {
     z-index: 1;
-    background-color: var(--clr-char-incorrect);
+    background-color: var(--color-destructive);
 }
 
 .circle__filled {
     z-index: 2;
     border-radius: 50%;
-    background: conic-gradient(var(--clr-char-correct) calc(var(--percent) * 1%),
+    background: conic-gradient(var(--color-primary) calc(var(--percent) * 1%),
             #0000 0);
 }
 
