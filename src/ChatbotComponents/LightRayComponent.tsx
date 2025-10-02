@@ -87,9 +87,9 @@ const LightRays: React.FC<LightRaysProps> = ({
     const raysColor = useMemo(() => {
         if (defaultColor) return defaultColor;
         if (theme === "dark") {
-            return "#1b5e20";
+            return "#893bc4";
         } else {
-            return "#39ea3e";
+            return "#8100e3";
         }
     }, [defaultColor, theme]);
 
